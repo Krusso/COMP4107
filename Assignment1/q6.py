@@ -1,6 +1,6 @@
 # https://sikaman.dyndns.org:8443/WebSite/rest/site/courses/4107/documents/Lassiter_2012_2013.pdf
 
-# mnist is dumb makes up its own file format
+# mnist has its own file format
 # https://gist.github.com/akesling/5358964
 
 
@@ -34,7 +34,7 @@ def read(dataset="training", path="./"):
 
     # Load everything in some numpy arrays
     with open(fname_lbl, 'rb') as flbl:
-        magic, num = struct.unpack(">II", flbl.read(8))
+        struct.unpack(">II", flbl.read(8))
         lbl = np.fromfile(flbl, dtype=np.int8)
 
     with open(fname_img, 'rb') as fimg:
@@ -63,3 +63,48 @@ def show(image):
     pyplot.show()
 
 
+def transform(matrix):
+    return np.ravel(matrix)
+
+
+A = {
+    0: np.zeros((28 * 28, 1)),
+    1: np.zeros((28 * 28, 1)),
+    2: np.zeros((28 * 28, 1)),
+    3: np.zeros((28 * 28, 1)),
+    4: np.zeros((28 * 28, 1)),
+    5: np.zeros((28 * 28, 1)),
+    6: np.zeros((28 * 28, 1)),
+    7: np.zeros((28 * 28, 1)),
+    8: np.zeros((28 * 28, 1)),
+    9: np.zeros((28 * 28, 1)),
+}
+
+mnist = read()
+i = 0
+while True:
+    try:
+        i = i+1
+        number = next(mnist)
+        label = number[0]
+        column = transform(number[1])
+        # print(column)
+        # print(A[label])
+        A[label] = np.c_[A[label], column]
+        if i % 100 == 0:
+            print(i)
+            print(column)
+        if i == 10:
+            break
+    except StopIteration:
+        print("done")
+        print(i)
+        break
+
+print(A[0][1])
+u, s, v = np.linalg.svd(A[0], )
+# five = next(mnist)
+# print(len(five[1]))
+# print(len(five[1][0]))
+# print(transform(five[1]))
+# print(next(mnist))
