@@ -55,30 +55,44 @@ def show(image):
     from matplotlib import pyplot
     import matplotlib as mpl
     fig = pyplot.figure()
-    ax = fig.add_subplot(1,1,1)
+    ax = fig.add_subplot(1, 1, 1)
     imgplot = ax.imshow(image, cmap=mpl.cm.Greys)
     imgplot.set_interpolation('nearest')
     ax.xaxis.set_ticks_position('top')
     ax.yaxis.set_ticks_position('left')
     pyplot.show()
 
+def draw(column):
+    column.resize(28, 28)
+    print(column)
+    show(column)
 
 def transform(matrix):
     return np.ravel(matrix)
 
 
+def getByLabel(label, mnist):
+    try:
+        while True:
+            number = next(mnist)
+            if number[0] == label:
+                return number
+    except StopIteration:
+        return
+
 A = {
-    0: np.zeros((28 * 28, 1)),
-    1: np.zeros((28 * 28, 1)),
-    2: np.zeros((28 * 28, 1)),
-    3: np.zeros((28 * 28, 1)),
-    4: np.zeros((28 * 28, 1)),
-    5: np.zeros((28 * 28, 1)),
-    6: np.zeros((28 * 28, 1)),
-    7: np.zeros((28 * 28, 1)),
-    8: np.zeros((28 * 28, 1)),
-    9: np.zeros((28 * 28, 1)),
+    0: np.zeros((28 * 28, 0)),
+    1: np.zeros((28 * 28, 0)),
+    2: np.zeros((28 * 28, 0)),
+    3: np.zeros((28 * 28, 0)),
+    4: np.zeros((28 * 28, 0)),
+    5: np.zeros((28 * 28, 0)),
+    6: np.zeros((28 * 28, 0)),
+    7: np.zeros((28 * 28, 0)),
+    8: np.zeros((28 * 28, 0)),
+    9: np.zeros((28 * 28, 0)),
 }
+
 
 mnist = read()
 i = 0
@@ -88,23 +102,67 @@ while True:
         number = next(mnist)
         label = number[0]
         column = transform(number[1])
-        # print(column)
-        # print(A[label])
         A[label] = np.c_[A[label], column]
-        if i % 100 == 0:
-            print(i)
-            print(column)
-        if i == 10:
+        if i == 200:
             break
     except StopIteration:
         print("done")
         print(i)
         break
 
-print(A[0][1])
-u, s, v = np.linalg.svd(A[0], )
-# five = next(mnist)
-# print(len(five[1]))
-# print(len(five[1][0]))
-# print(transform(five[1]))
-# print(next(mnist))
+for x in range(len(A)):
+    print(len(A[x]))
+    print(len(A[x][0]))
+
+
+# printing entire arrays
+np.set_printoptions(threshold=np.nan)
+
+
+getByLabel(3, mnist)
+getByLabel(3, mnist)
+getByLabel(3, mnist)
+image = getByLabel(3, mnist)
+unknown = transform(image[1])
+for y in range(len(A)):
+    u, s, v = np.linalg.svd(A[y])
+    # Ax = b
+    # 0 = b - Ax
+    x, res, rank, sv = np.linalg.lstsq(u, unknown, rcond=None)
+    # print(x)
+    print(y, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
+    #print(np.abs(np.linalg.eigvalsh(unknown - np.dot(u, x))))
+    #print(np.linalg.norm(x, 2))
+    #print(s1[0][0])
+    #draw(unknown - 0)
+    #print(np.dot(u, x).ndim)
+    #draw(unknown - np.dot(u, x))
+
+
+
+def printStuff(label):
+    image = getByLabel(label, mnist)
+    # show(image[1])
+    unknown = transform(image[1])
+    # Ax = b
+    x, res, rank, sv = np.linalg.lstsq(u, unknown, rcond=None)
+    # print(x)
+    print(label, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
+
+
+# printStuff(0)
+# printStuff(1)
+# printStuff(2)
+# printStuff(3)
+# printStuff(4)
+# printStuff(5)
+# printStuff(6)
+# printStuff(7)
+# printStuff(8)
+# printStuff(9)
+
+
+# print(unknown - np.dot(u, x))
+# print(x)
+# print(unknown)
+# print(res)
