@@ -11,9 +11,8 @@ print(np.linalg.matrix_rank(A))
 # 2 linearlly indepdent rows
 print(np.linalg.matrix_rank(A.T))
 
-# cant get inverse as
-# more columns than rows
-# and redundant rows and columns
+# since more columns than rows
+# need to get pseudo inverse
 A_Inverse = np.linalg.pinv(A)
 print(A_Inverse)
 print(np.dot(A, A_Inverse))
