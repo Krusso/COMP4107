@@ -103,7 +103,7 @@ while True:
         label = number[0]
         column = transform(number[1])
         A[label] = np.c_[A[label], column]
-        if i == 200:
+        if i == 5000:
             break
     except StopIteration:
         print("done")
@@ -121,16 +121,29 @@ np.set_printoptions(threshold=np.nan)
 
 getByLabel(3, mnist)
 getByLabel(3, mnist)
-getByLabel(3, mnist)
 image = getByLabel(3, mnist)
 unknown = transform(image[1])
+array = []
 for y in range(len(A)):
     u, s, v = np.linalg.svd(A[y])
     # Ax = b
     # 0 = b - Ax
     x, res, rank, sv = np.linalg.lstsq(u, unknown, rcond=None)
     # print(x)
-    print(y, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
+    # print(y, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
+    x = x[:10]
+    tmp = np.identity(784)
+    print(tmp.shape)
+    print(np.dot(u[:,:10], u[:,:10].T).shape)
+    residual = np.linalg.norm(np.dot((tmp - np.dot(u[:,:10], u[:,:10].T)), unknown), 2)
+    print(y , " Residual " , residual)
+    array.append(residual)
+    # get me the max
+    
+a = max(array)
+for w in range(len(A)):
+    print( w, " Residual ", array[w], " relative ", (array[w] / a))
+
     #print(np.abs(np.linalg.eigvalsh(unknown - np.dot(u, x))))
     #print(np.linalg.norm(x, 2))
     #print(s1[0][0])
@@ -146,6 +159,7 @@ def printStuff(label):
     unknown = transform(image[1])
     # Ax = b
     x, res, rank, sv = np.linalg.lstsq(u, unknown, rcond=None)
+    
     # print(x)
     print(label, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
 

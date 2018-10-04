@@ -4,7 +4,7 @@ import math
 
 # Specify givens:
 l = lambda i: -0.7 + 0.001*(i-1)  # equation for xi = yi = -0.7 + 0.001(i-1)
-r = range(1, 1401)                # this is our range (we start at 0 due to indexing so it really goes from 0 to 1400)
+r = range(1, 1402)                # this is our range (we start at 0 due to indexing so it really goes from 0 to 1400)
 k = 2                             # we are computing the best rank(2) for matrix A
 
 # Generate the matrix A based on a_ij = sqrt(1 - x_i ^2 - y_i ^2)

@@ -10,6 +10,9 @@ A = [
 ]
 
 u, s, v = np.linalg.svd(A)
+print(A)
+print('usv',np.dot(u*s,v))
+
 k=2
 print('u:',u)
 u = [i[:k] for i in u]
