@@ -129,29 +129,39 @@ testCases = []
 i = 0
 while True:
     try:
-        i = i+1
         number = next(mnistTesting)
         label = number[0]
         column = transform(number[1])
+        if label != 4:
+            continue
         testCases.append((label, column))
-        if i == 50:
+        if i == 100:
             break
+        i = i+1
     except StopIteration:
         break
 
-for b in [1, 2, 5, 6, 10]:
+basis = []
+for b in [1, 2, 5, 6] + list(range(10, 50, 3)):
+    basis.append((b, []))
+    print("Calculating svd for basis sized: ", b)
+    for y in range(len(A)):
+        u, s, v = np.linalg.svd(A[y])
+        basis[len(basis) - 1][1].append(np.dot(u[:,:b], u[:,:b].T))
+
+
+for b in basis:
     correct = 0
     totalTc = 0
     for tc in testCases:
         array = []
-        for y in range(len(A)):
-            u, s, v = np.linalg.svd(A[y])
-            ub = u[:, :b]
-            ubt = ub.T
-            residual = np.linalg.norm(np.dot((tmp - np.dot(ub, ubt)), tc[1]), 2)
-            array.append((y, residual))
+        i = 0
+        for y in b[1]:
+            array.append((i, np.linalg.norm(np.dot(tmp - y, tc[1]), 2)))
+            i = i + 1
         array.sort(key=lambda x: x[1])
+        #print("tc done")
         if array[0][0] == tc[0]:
             correct = correct + 1
         totalTc = totalTc + 1
-    print("For b: ", b, " Correct: ", correct, " Total test cases: ", totalTc, " Percentage: ", (correct/totalTc))
+    print("For b: ", b[0], " Correct: ", correct, " Total test cases: ", totalTc, " Percentage: ", (correct/totalTc))
