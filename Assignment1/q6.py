@@ -71,15 +71,6 @@ def transform(matrix):
     return np.ravel(matrix)
 
 
-def getByLabel(label, mnist):
-    try:
-        while True:
-            number = next(mnist)
-            if number[0] == label:
-                return number
-    except StopIteration:
-        return
-
 A = {
     0: np.zeros((28 * 28, 0)),
     1: np.zeros((28 * 28, 0)),
@@ -113,17 +104,8 @@ while True:
 # printing entire arrays
 np.set_printoptions(threshold=np.nan)
 
-
-image = getByLabel(3, mnist)
-unknown = transform(image[1])
 array = []
 tmp = np.identity(784)
-# for y in range(len(A)):
-#     u, s, v = np.linalg.svd(A[y])
-#     residual = np.linalg.norm(np.dot((tmp - np.dot(u[:,:10], u[:,:10].T)), unknown), 2)
-#     print(y, " Residual ", residual)
-#     array.append(residual)
-
 
 testCases = []
 i = 0
@@ -149,7 +131,6 @@ for b in [1, 2, 5, 6] + list(range(10, 50, 3)):
         u, s, v = np.linalg.svd(A[y])
         basis[len(basis) - 1][1].append(np.dot(u[:,:b], u[:,:b].T))
 
-
 for b in basis:
     correct = 0
     totalTc = 0
@@ -160,7 +141,6 @@ for b in basis:
             array.append((i, np.linalg.norm(np.dot(tmp - y, tc[1]), 2)))
             i = i + 1
         array.sort(key=lambda x: x[1])
-        #print("tc done")
         if array[0][0] == tc[0]:
             correct = correct + 1
         totalTc = totalTc + 1

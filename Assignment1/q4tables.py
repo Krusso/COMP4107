@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 table = [["Step Size", "Iterations", "x"]]
 tolerance = 0.01
@@ -21,7 +22,7 @@ def t(x):
     #    return x
 
 
-ix = np.random.rand(3)
+ix = np.array([random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1)])
 np.seterr(all='raise')
 for stepSize in [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]:
     x = ix

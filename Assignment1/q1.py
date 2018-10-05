@@ -1,6 +1,7 @@
 # Question 1
 
-import numpy as np 
+import numpy as np
+from scipy import spatial
 
 A = [
     [3, 1, 2, 3],
@@ -9,19 +10,12 @@ A = [
     [1, 6, 5, 2]
 ]
 
-u, s, v = np.linalg.svd(A)
-print(A)
-print('usv',np.dot(u*s,v))
+uO, sO, vO = np.linalg.svd(A)
 
-k=2
-print('u:',u)
-u = [i[:k] for i in u]
-print(u)
-print(s)
-s = np.diag(s[:k])
-print('s',s)
-v = [i[:k] for i in v.T]
-print('v',v)
+k = 2
+u = uO[:, :k]
+s = np.diag(sO[:k])
+v = vO.T[:, :k]
 
 sv = np.dot(s, u[3])
 usv = np.dot(v[0], sv)
@@ -29,28 +23,38 @@ usv = np.dot(v[0], sv)
 prediction = 4 + usv
 print("prediction is: %.2f" % prediction)
 
-Alice = [5,3,4,4]
-Alicia = [3,1,2,3]
-Bob = [4,3,4,3]
-## Alice2D
-Alice2D = np.dot(np.dot(Alice, v),np.linalg.inv(s))
-Alice2D=[0.64, -0.30]
+Alice = [5, 3, 4, 4]
+# Alice2D
+Alice2D = np.dot(np.dot(Alice, v), np.linalg.inv(s))
 
-#using Alice2D to predict others
-sv = np.dot(s, u[0])
-usv = np.dot(Alice2D, sv)
-prediction = 4 + usv
-print("prediction is: %.2f" % prediction)
-
-Alicia2D = np.dot(np.dot(Alicia, v),np.linalg.inv(s))
-Bob2D = np.dot(np.dot(Bob, v),np.linalg.inv(s))
+# finding closest to Alice in 2d
+Alicia2D = np.dot(np.dot(A[0], v), np.linalg.inv(s))
+Bob2D = np.dot(np.dot(A[1], v), np.linalg.inv(s))
+Mary2D = np.dot(np.dot(A[2], v), np.linalg.inv(s))
+Sue2D = np.dot(np.dot(A[3], v), np.linalg.inv(s))
 
 print('Alice2d:', Alice2D)
 print('Alicia2d:', Alicia2D)
 print('Bob2d:', Bob2D)
-####find alice 4d
-# u, s, v = np.linalg.svd(A)
-# v = v.T
-# print(v)
-# Alice4d = np.dot(np.dot(Alice, v), np.linalg.inv(s)
-# print(Alice4d)
+print('Mary2d:', Mary2D)
+print('Sue2d:', Sue2D)
+
+twoD = list([Alicia2D, Bob2D, Mary2D, Sue2D])
+names = list(["Alice", "Bob", "Mary", "Sue"])
+print(names[spatial.KDTree(twoD).query(Alice2D)[1]], " is closest to Alice in 2d")
+
+# finding closest to Alice in 4d
+Alice4D = np.dot(np.dot(Alice, vO.T[:, :4]), np.linalg.inv(np.diag(sO[:4])))
+Alicia4D = np.dot(np.dot(A[0], vO.T[:, :4]), np.linalg.inv(np.diag(sO[:4])))
+Bob4D = np.dot(np.dot(A[1], vO.T[:, :4]), np.linalg.inv(np.diag(sO[:4])))
+Mary4D = np.dot(np.dot(A[2], vO.T[:, :4]), np.linalg.inv(np.diag(sO[:4])))
+Sue4D = np.dot(np.dot(A[3], vO.T[:, :4]), np.linalg.inv(np.diag(sO[:4])))
+
+print('Alice2d:', Alice4D)
+print('Alicia2d:', Alicia4D)
+print('Bob2d:', Bob4D)
+print('Mary2d:', Mary4D)
+print('Sue2d:', Sue4D)
+
+fourD = list([Alicia4D, Bob4D, Mary4D, Sue4D])
+print(names[spatial.KDTree(fourD).query(Alice4D)[1]], " is closest to Alice in 4d")
