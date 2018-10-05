@@ -94,7 +94,8 @@ A = {
 }
 
 
-mnist = read()
+mnist = read("training")
+mnistTesting = read("testing")
 i = 0
 while True:
     try:
@@ -106,77 +107,61 @@ while True:
         if i == 5000:
             break
     except StopIteration:
-        print("done")
-        print(i)
         break
-
-for x in range(len(A)):
-    print(len(A[x]))
-    print(len(A[x][0]))
 
 
 # printing entire arrays
 np.set_printoptions(threshold=np.nan)
 
 
-getByLabel(3, mnist)
-getByLabel(3, mnist)
 image = getByLabel(3, mnist)
 unknown = transform(image[1])
 array = []
-for y in range(len(A)):
-    u, s, v = np.linalg.svd(A[y])
-    # Ax = b
-    # 0 = b - Ax
-    x, res, rank, sv = np.linalg.lstsq(u, unknown, rcond=None)
-    # print(x)
-    # print(y, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
-    x = x[:10]
-    tmp = np.identity(784)
-    print(tmp.shape)
-    print(np.dot(u[:,:10], u[:,:10].T).shape)
-    residual = np.linalg.norm(np.dot((tmp - np.dot(u[:,:10], u[:,:10].T)), unknown), 2)
-    print(y , " Residual " , residual)
-    array.append(residual)
-    # get me the max
-    
-a = max(array)
-for w in range(len(A)):
-    print( w, " Residual ", array[w], " relative ", (array[w] / a))
-
-    #print(np.abs(np.linalg.eigvalsh(unknown - np.dot(u, x))))
-    #print(np.linalg.norm(x, 2))
-    #print(s1[0][0])
-    #draw(unknown - 0)
-    #print(np.dot(u, x).ndim)
-    #draw(unknown - np.dot(u, x))
+tmp = np.identity(784)
+# for y in range(len(A)):
+#     u, s, v = np.linalg.svd(A[y])
+#     residual = np.linalg.norm(np.dot((tmp - np.dot(u[:,:10], u[:,:10].T)), unknown), 2)
+#     print(y, " Residual ", residual)
+#     array.append(residual)
 
 
+testCases = []
+i = 0
+while True:
+    try:
+        number = next(mnistTesting)
+        label = number[0]
+        column = transform(number[1])
+        if label != 4:
+            continue
+        testCases.append((label, column))
+        if i == 100:
+            break
+        i = i+1
+    except StopIteration:
+        break
 
-def printStuff(label):
-    image = getByLabel(label, mnist)
-    # show(image[1])
-    unknown = transform(image[1])
-    # Ax = b
-    x, res, rank, sv = np.linalg.lstsq(u, unknown, rcond=None)
-    
-    # print(x)
-    print(label, " Residual: ", np.linalg.norm(unknown - np.dot(u, x), 2))
+basis = []
+for b in [1, 2, 5, 6] + list(range(10, 50, 3)):
+    basis.append((b, []))
+    print("Calculating svd for basis sized: ", b)
+    for y in range(len(A)):
+        u, s, v = np.linalg.svd(A[y])
+        basis[len(basis) - 1][1].append(np.dot(u[:,:b], u[:,:b].T))
 
 
-# printStuff(0)
-# printStuff(1)
-# printStuff(2)
-# printStuff(3)
-# printStuff(4)
-# printStuff(5)
-# printStuff(6)
-# printStuff(7)
-# printStuff(8)
-# printStuff(9)
-
-
-# print(unknown - np.dot(u, x))
-# print(x)
-# print(unknown)
-# print(res)
+for b in basis:
+    correct = 0
+    totalTc = 0
+    for tc in testCases:
+        array = []
+        i = 0
+        for y in b[1]:
+            array.append((i, np.linalg.norm(np.dot(tmp - y, tc[1]), 2)))
+            i = i + 1
+        array.sort(key=lambda x: x[1])
+        #print("tc done")
+        if array[0][0] == tc[0]:
+            correct = correct + 1
+        totalTc = totalTc + 1
+    print("For b: ", b[0], " Correct: ", correct, " Total test cases: ", totalTc, " Percentage: ", (correct/totalTc))
