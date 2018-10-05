@@ -7,6 +7,7 @@
 import os
 import struct
 import numpy as np
+import matplotlib.pyplot as plt
 
 """
 Loosely inspired by http://abel.ee.ucla.edu/cvxopt/_downloads/mnist.py
@@ -30,8 +31,6 @@ def read(dataset="training", path="./"):
     else:
         raise ValueError("dataset must be 'testing' or 'training'")
 
-    print(os.listdir(path))
-
     # Load everything in some numpy arrays
     with open(fname_lbl, 'rb') as flbl:
         struct.unpack(">II", flbl.read(8))
@@ -41,11 +40,17 @@ def read(dataset="training", path="./"):
         magic, num, rows, cols = struct.unpack(">IIII", fimg.read(16))
         img = np.fromfile(fimg, dtype=np.uint8).reshape(len(lbl), rows, cols)
 
-    get_img = lambda idx: (lbl[idx], img[idx])
+    digits = []
+    for d in range(10):
+        combined = zip(lbl, img)
+        digits.append((d, list(map(lambda x: transform(x[1]), filter(lambda x: x[0] == d, combined)))))
+
+    return digits
+    # get_img = lambda idx: (lbl[idx], img[idx])
 
     # Create an iterator which returns each image in turn
-    for i in range(len(lbl)):
-        yield get_img(i)
+    # for i in range(len(lbl)):
+    #    yield get_img(i)
 
 
 def show(image):
@@ -62,10 +67,18 @@ def show(image):
     ax.yaxis.set_ticks_position('left')
     pyplot.show()
 
-def draw(column):
-    column.resize(28, 28)
-    print(column)
-    show(column)
+
+def show_graph(results):
+    """
+    Plot basis vs. classification accuracy.
+    """
+    x = [i[0] for i in results]
+    y = [j[1] for j in results]
+    plt.plot(x, y)
+    plt.xlabel('Basis')
+    plt.ylabel('Classification Accuracy Percentage')
+    plt.show()
+
 
 def transform(matrix):
     return np.ravel(matrix)
@@ -87,19 +100,11 @@ A = {
 
 mnist = read("training")
 mnistTesting = read("testing")
-i = 0
-while True:
-    try:
-        i = i+1
-        number = next(mnist)
-        label = number[0]
-        column = transform(number[1])
-        A[label] = np.c_[A[label], column]
-        if i == 5000:
-            break
-    except StopIteration:
-        break
-
+# using 500 images for each A matrix
+for d in range(10):
+    subset = list(np.random.choice(len(mnist[d][1]), size=50, replace=False))
+    for s in subset:
+        A[d] = np.c_[A[d], mnist[d][1][s]]
 
 # printing entire arrays
 np.set_printoptions(threshold=np.nan)
@@ -108,20 +113,10 @@ array = []
 tmp = np.identity(784)
 
 testCases = []
-i = 0
-while True:
-    try:
-        number = next(mnistTesting)
-        label = number[0]
-        column = transform(number[1])
-        if label != 4:
-            continue
-        testCases.append((label, column))
-        if i == 100:
-            break
-        i = i+1
-    except StopIteration:
-        break
+# getting 100 test cases for the digit 4
+subset = list(np.random.choice(len(mnistTesting[4][1]), size=100, replace=False))
+for s in subset:
+    testCases.append((4, mnistTesting[4][1][s]))
 
 basis = []
 for b in [1, 2, 5, 6] + list(range(10, 50, 3)):
@@ -129,8 +124,9 @@ for b in [1, 2, 5, 6] + list(range(10, 50, 3)):
     print("Calculating svd for basis sized: ", b)
     for y in range(len(A)):
         u, s, v = np.linalg.svd(A[y])
-        basis[len(basis) - 1][1].append(np.dot(u[:,:b], u[:,:b].T))
+        basis[len(basis) - 1][1].append(np.dot(u[:, :b], u[:, :b].T))
 
+results = []
 for b in basis:
     correct = 0
     totalTc = 0
@@ -145,3 +141,6 @@ for b in basis:
             correct = correct + 1
         totalTc = totalTc + 1
     print("For b: ", b[0], " Correct: ", correct, " Total test cases: ", totalTc, " Percentage: ", (correct/totalTc))
+    results.append((b[0], (correct/totalTc) * 100))
+
+show_graph(results)
