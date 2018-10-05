@@ -10,7 +10,8 @@ A = [
 ]
 
 u, s, v = np.linalg.svd(A)
-print(A)
+print('shapes')
+print(u.shape, s.shape, v.shape)
 print('usv',np.dot(u*s,v))
 
 k=2
