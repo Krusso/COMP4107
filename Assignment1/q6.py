@@ -102,7 +102,7 @@ mnist = read("training")
 mnistTesting = read("testing")
 # using 500 images for each A matrix
 for d in range(10):
-    subset = list(np.random.choice(len(mnist[d][1]), size=50, replace=False))
+    subset = list(np.random.choice(len(mnist[d][1]), size=500, replace=False))
     for s in subset:
         A[d] = np.c_[A[d], mnist[d][1][s]]
 

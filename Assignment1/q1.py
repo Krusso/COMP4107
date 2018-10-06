@@ -41,7 +41,7 @@ print('Sue2d:', Sue2D)
 
 twoD = list([Alicia2D, Bob2D, Mary2D, Sue2D])
 names = list(["Alice", "Bob", "Mary", "Sue"])
-print(names[spatial.KDTree(twoD).query(Alice2D)[1]], " is closest to Alice in 2d")
+print(names[spatial.KDTree(twoD).query(Alice2D)[1]], "is closest to Alice in 2d")
 
 # finding closest to Alice in 4d
 Alice4D = np.dot(np.dot(Alice, vO.T[:, :4]), np.linalg.inv(np.diag(sO[:4])))
@@ -57,4 +57,4 @@ print('Mary2d:', Mary4D)
 print('Sue2d:', Sue4D)
 
 fourD = list([Alicia4D, Bob4D, Mary4D, Sue4D])
-print(names[spatial.KDTree(fourD).query(Alice4D)[1]], " is closest to Alice in 4d")
+print(names[spatial.KDTree(fourD).query(Alice4D)[1]], "is closest to Alice in 4d")
