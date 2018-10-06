@@ -12,6 +12,6 @@ A = [
     [1, 1, 1]
 ]
 u, s, v = np.linalg.svd(A)
-print("u", u)
-print("s", np.diag(s))
-print("v", v)
+print("u: ", u)
+print("s: ", np.diag(s))
+print("v: ", v)

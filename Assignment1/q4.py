@@ -15,7 +15,7 @@ b = np.array([1, 1, 1, 1]).T
 # default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.
 # To use the future default and silence this warning we advise to pass `rcond=None`, to keep using the old, explicitly
 # pass `rcond=-1`.
-#   x, res, rank, sv = np.linalg.lstsq(A,b)
+# x, res, rank, sv = np.linalg.lstsq(A,b)
 x, res, rank, sv = np.linalg.lstsq(A, b, rcond=None)
 
 print(x)

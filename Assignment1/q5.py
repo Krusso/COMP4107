@@ -23,10 +23,10 @@ print("Vector 2:", nullA[:, [1]])
 
 
 # 2 linearly independent columns
-print("A has:", A.shape[1], "columns", "of which", np.linalg.matrix_rank(A)
+print("A has ", A.shape[1], "columns", "of which", np.linalg.matrix_rank(A)
       , " are linearly independent")
 # 2 linearly independent rows
-print(np.linalg.matrix_rank(A.T))
+print("A has ", np.linalg.matrix_rank(A.T), " linearly independent rows")
 
 # since more columns than rows
 # need to get pseudo inverse

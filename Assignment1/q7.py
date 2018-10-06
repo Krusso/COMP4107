@@ -1,28 +1,9 @@
-import numpy as np 
-import csv
-import os
-import pprint
-# from sklearn.metrics import mean_absolute_error
+import numpy as np
+import matplotlib.pyplot as plt
+import time
 
 ml_dir = './ml-latest-small'
 ml_100k_dir='./ml-100k'
-
-pp = pprint.PrettyPrinter(indent = 4)
-
-#A map of userid to an array of ratings
-user_rates = {} 
-movies = {} #map of movieid to index
-k=14 
-
-def movie_rating_avg(table, movieIndex):
-    s = 0.0
-    num_ratings = 0
-    for r in range(len(table)):
-        if table[r][movieIndex] != 0:
-            s += table[r][movieIndex]
-            num_ratings += 1
-
-    return float(s/num_ratings)
 
 def mean_absolute_error(y_true_table, y_pred_table, avg_user_rating):
     sumN = 0
@@ -30,100 +11,122 @@ def mean_absolute_error(y_true_table, y_pred_table, avg_user_rating):
     r = len(y_true_table)
     for i in range(r):
         c = len(y_true_table[i])
-        # row_average = sum([i for i in y_pred_table[i]])/c
-        # print(row_average)
         for j in range(c):
             if y_true_table[i][j] != 0:
                 N += 1
-                # row_average = movie_rating_avg(y_true_table, j)
-                sumN += abs(y_true_table[i][j] - (avg_user_rating[i] + y_pred_table[i][j]))
-
-    mae = sumN/N
-    print(N)
-    return mae
+                sumN += abs(y_true_table[i][j] - (y_pred_table[i][j]))
+    print("N is,", N)
+    return sumN/N
 
 def read(filename):
     """
         input: filename -> a string representing the path to find the data file
         return: a 2D array, where each row consists of a list of tuples (movieid, rating)
     """
-    user_ratings = [[] for i in range(943)]
+    ratings = np.zeros((943, 1682))
+    tuples = []
+    total = 0
     with open(filename) as data_file:
         for row in data_file:
             data = row.split('\t')
             userid = int(data[0])-1
             movieid = int(data[1])-1
-            rating = (movieid, float(data[2]))
-            user_ratings[userid].append(rating)
-    return user_ratings
-
-def split_data(ur, split_percentage=0.2):
-    """
-        input: ur -> the user rating that was returned from calling read()
-               split_percentage -> the percentage we are splitting the data training:test
-
-        return: 2d matrices representing the training and test set
-    """
-    np.random.shuffle(ur)
-
-    num_items = 1682
-    train_set = [[0 for i in range(num_items)] for j in range(len(ur))]
-    test_set = [[0 for i in range(num_items)] for j in range(len(ur))]
-    average_rating = []
-    for userIndex in range(len(ur)):
-        #randomy choose split_percentage of ratings for each user and put them
-        #in the trainset, while the rest should be placed in the test set
-        user_rating = ur[userIndex] #this is a list of tuples (movieid, rating)
-        num_ratings = len(ur[userIndex])
-        training_choices = np.random.choice([i for i in range(num_ratings)], int(num_ratings*split_percentage), replace=False)
-        #loop from 0 - 1682, these index numbers represent the movieid, and thus A[i][j] = user_rating
-        avg = 0
-        N = 0
-        for i in range(num_ratings):
-            #we check if i is in training_choices, and if so, we set user rating here
-            if i in training_choices:
-                train_set[userIndex][user_rating[i][0]] = user_rating[i][1]
-                avg += user_rating[i][1]
-                N += 1
-            else:
-                test_set[userIndex][user_rating[i][0]] = user_rating[i][1]
-        avg /= N
-        average_rating.append(avg)
-    return train_set, test_set, average_rating
+            tuples.append((userid, movieid))
+            total = total + 1
+            ratings[userid][movieid] = float(data[2])
+    return ratings, tuples, total
 
 
+def show_graph(results):
+    for result in results:
+        x = [i[0] for i in result[1]]
+        y = [j[1] for j in result[1]]
+        plt.plot(x, y, label=result[0])
+    plt.xlabel('Folding-in model size')
+    plt.ylabel('MAE')
+    plt.legend()
+    plt.show()
+
+
+def show_graph_put(results):
+    for result in results:
+        x = [i[0] for i in result[1]]
+        y = [j[1] for j in result[1]]
+        plt.plot(x, y, label=result[0])
+    plt.xlabel('Basis size')
+    plt.ylabel('Throughput (predictions/sec)')
+    plt.legend()
+    plt.show()
 k = 14
-user_ratings = read(ml_100k_dir+'/u.data')
-for i in [0.2, 0.5, 0.8]:
+ratings, tuples, total = read(ml_100k_dir+'/u.data')
 
-    train_set, test_set, avg_user_rating = split_data(user_ratings, split_percentage=i)
-    threshold_size = 600 #from research paper
+movie_averages = np.true_divide(ratings.sum(0), (ratings != 0).sum(0))
+user_averages = np.true_divide(ratings.sum(1), (ratings != 0).sum(1))
 
-    u, s, v = np.linalg.svd(train_set[:threshold_size])
-    uk = u[:,:k]
-    sk = np.diag(s[:k])
-    vk = v[:k]
-    #fold in
-    for i in range(threshold_size, 943):
-        nu = np.array(train_set[i])
-        P = np.dot(np.dot(nu, vk.T), np.linalg.inv(sk))
-        uk = np.vstack([uk,P])
+# !!!! EXPERIMENTAL !!!
+#
+#
+# for m in range(len(movie_averages)):
+#     for u in range(len(user_averages)):
+#         if ratings[u][m] != 0:
+#             ratings[u][m] = ratings[u][m] - movie_averages[m]
 
-    #make predictions
-    m = np.dot(uk, np.sqrt(sk).T)
-    n = np.dot(np.sqrt(sk), vk)
-    pred_table = np.dot(m,n)
+for m in range(len(movie_averages)):
+    for u in range(len(user_averages)):
+        if ratings[u][m] != 0:
+            ratings[u][m] = ratings[u][m] - user_averages[u]
+# !!!! END EXPERIMENTAL !!!
 
-    # for i in range(len(test_set)):
-    #     for j in range(len(test_set[i])):
-    #         if test_set[i][j] != 0:
-    #             print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
+resultGraph = []
+timeGraph = []
+for split_percentage in list([0.2, 0.5, 0.8]):
+    subset = np.random.choice(total, int(total * split_percentage), replace=False)
+    train_set = []
+    train_data = np.zeros((943, 1682))
+    test_set = []
+    test_data = np.zeros((943, 1682))
+    for d in range(total):
+        t = tuples[d]
+        if d in subset:
+            train_set.append(d)
+            train_data[t[0]][t[1]] = ratings[t[0]][t[1]]
+        else:
+            test_set.append(d)
+            test_data[t[0]][t[1]] = ratings[t[0]][t[1]]
 
-    # for i in range(len(train_set)):
-    #     for j in range(len(train_set[i])):
-    #         if train_set[i][j] != 0:
-    #             print("prediction for %d,%d is %f and real is %f" % (i,j ,pred_table[i][j], train_set[i][j]))
-            
+    results = []
+    times = []
+    for b in list([600, 650, 700, 750, 800, 850, 900, 943]):
+        threshold_size = b  # from research paper
+        start = time.time()
+        u, s, v = np.linalg.svd(train_data[:threshold_size])
+        uk = u[:,:k]
+        sk = np.diag(s[:k])
+        vk = v[:k]
+        # fold in
+        for i in range(threshold_size, 943):
+            nu = np.array(train_data[i])
+            P = np.dot(np.dot(nu, vk.T), np.linalg.inv(sk))
+            uk = np.vstack([uk, P])
 
-    mae = mean_absolute_error(test_set[:900], pred_table, avg_user_rating)
-    print(mae)
+        print("Starting to make predictions")
+        # make predictions
+        m = np.dot(uk, np.sqrt(sk).T)
+        n = np.dot(np.sqrt(sk), vk)
+        pred_table = np.dot(m,n)
+
+        print("Pred", pred_table.shape)
+        print("Test", len(test_set))
+        print("Train", len(train_set))
+        mae = mean_absolute_error(test_data[:943], pred_table, user_averages)
+        end = time.time()
+        print(mae)
+        print(uk.shape)
+        results.append((b, mae))
+        times.append((b, len(test_set) / (end - start)))
+
+    resultGraph.append((split_percentage, results))
+    timeGraph.append((split_percentage, times))
+
+show_graph(resultGraph)
+show_graph_put(timeGraph)
