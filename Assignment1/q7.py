@@ -3,85 +3,121 @@ import csv
 import os
 import pprint
 # from sklearn.metrics import mean_absolute_error
+def split(mat, x=0.8):
+    numTrainExamples = int(len(mat) * x)
+    # print(numTrainExamples)
+    training = mat[:numTrainExamples]
+    testing = mat[numTrainExamples:]
+    return training, testing
 
 ml_dir = './ml-latest-small'
 # MAX_RATINGS = 100000
+ml_100k_dir='./ml-100k'
 
 pp = pprint.PrettyPrinter(indent = 4)
 
 #A map of userid to an array of ratings
 user_rates = {} 
 movies = {} #map of movieid to index
+k=14 
 
-k=14 #
 
-#ratings.csv contains approx 100000 ratings with each user having more than 20 ratings
-#userid, movieid , rating, timestamp
-with open(ml_dir + '/ratings.csv') as ratings_file:
-    csv_reader = csv.reader(ratings_file, delimiter=',')
-    next(csv_reader) #skip the first line as those are just the labels
-    for row in csv_reader:
-        userid = row[0]
-        if userid not in user_rates:
-            user_rates[userid]=[]
-        user_rates[userid].append(row[1:])
+def mean_absolute_error(y_true_table, y_pred_table):
+    sumN = 0
+    r = len(y_true_table)
+    for i in range(r):
+        c = len(y_true_table[i])
+        row_average = sum(train_set[i])/len(train_set[i])
+        for j in range(c):
+            sumN += abs(y_pred_table[i][j] - (row_average + y_pred_table[i][j]))
 
-with open(ml_dir + '/movies.csv', encoding='utf8') as movie_file:
-    csv_reader = csv.reader(movie_file, delimiter = ',')
-    next(csv_reader)
-    index = 0
-    for row in csv_reader:
-        # print(row)
-        movieid = row[0]
-        if movieid not in movies:
-            movies[movieid] = index
-            index += 1
+    mae = sumN/(r*c)
+    return mae
 
-def convertToMatrix(ur):
-    #Convert the dictionary of user rates which is a mapping of userid to [movieid, rating, timestamp]
-    numUsers = len(ur)
-    numMovies = len(movies)
-    print("Making a %d x %d user-movie matrix" % (numUsers, numMovies))
-    mat = []
-    for _, value in ur.items():
-        usrRatings = [0 for i in range(numMovies)]
-        for data in value:
-            movieId = data[0]
-            rating = data[1]
-            usrRatings[movies[movieId]] = float(rating)
-        mat.append(usrRatings)
-    return mat
+# mae = mean_absolute_error(train_set, pred_table)
+# print(mae)
 
-matrix = convertToMatrix(user_rates)
-matrix = np.matrix(matrix)
-print(matrix.shape)
+# for basis_size in range(400, 601, 50):
+#     A = matrix[]
 
-def split(mat, x=0.8):
-    numTrainExamples = int(len(mat) * x)
-    # print(numTrainExamples)
-    training = matrix[:numTrainExamples]
-    testing = matrix[numTrainExamples:]
-    return training, testing
+def read(filename):
+    """
+        input: filename -> a string representing the path to find the data file
+        return: a 2D array, where each row consists of a list of tuples (movieid, rating)
+    """
+    user_ratings = [[] for i in range(943)]
+    with open(filename) as data_file:
+        for row in data_file:
+            data = row.split('\t')
+            userid = int(data[0])-1
+            movieid = int(data[1])-1
+            rating = (movieid, float(data[2]))
+            user_ratings[userid].append(rating)
+    return user_ratings
 
-train_set, test_set = split(matrix)
-print(train_set.shape)
-u, s, vt = np.linalg.svd(train_set, full_matrices=False)
-print(u.shape, s.shape, vt.shape)
+def split_data(ur, split_percentage=0.8):
+    """
+        input: ur -> the user rating that was returned from calling read()
+               split_percentage -> the percentage we are splitting the data training:test
 
-uk = u[:,:k]
+        return: 2d matrices representing the training and test set
+    """
+    num_items = 1682
+
+    train_set = [[0 for i in range(num_items)] for j in range(len(ur))]
+    test_set = [[0 for i in range(num_items)] for j in range(len(ur))]
+    for userIndex in range(len(ur)):
+        #randomy choose split_percentage of ratings for each user and put them
+        #in the trainset, while the rest should be placed in the test set
+        user_rating = ur[userIndex] #this is a list of tuples (movieid, rating)
+        num_ratings = len(ur[userIndex])
+        training_choices = np.random.choice([i for i in range(num_ratings)], int(num_ratings*split_percentage))
+        #loop from 0 - 1682, these index numbers represent the movieid, and thus A[i][j] = user_rating
+        for i in range(num_ratings):
+            #we check if i is in training_choices, and if so, we set user rating here
+            if i in training_choices:
+                train_set[userIndex][user_rating[i][0]] = user_rating[i][1]
+            else:
+                test_set[userIndex][user_rating[i][0]] = user_rating[i][1]
+    return train_set, test_set 
+
+
+k = 14
+user_ratings = read(ml_100k_dir+'/u.data')
+train_set, test_set = split_data(user_ratings, split_percentage=0.8)
+threshold_size = 600 #from research paper
+
+
+
+u, s, v = np.linalg.svd(train_set[:threshold_size])
+uk = uk = u[:,:k]
 sk = np.diag(s[:k])
-vkt = vt[:k]
+vk = v[:k]
+#fold in
+for i in range(600, 900):
+    print(i)
+    nu = np.array(train_set[i])
+    P = np.dot(np.dot(nu, vk.T), np.linalg.inv(sk))
+    uk = np.vstack([uk,P])
+
+#make predictions
+m = np.dot(uk, np.sqrt(sk).T)
+n = np.dot(np.sqrt(sk), vk)
+pred_table = np.dot(m,n)
+
+for i in range(len(test_set)):
+    for j in range(len(test_set[i])):
+        if test_set[i][j] != 0:
+            print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
+            
+
+
+print(pred_table.shape)
+mae = mean_absolute_error(test_set[:900], pred_table)
+
+print(mae)
+
+
+
 
 print(uk.shape)
-print(sk.shape)
-print(vkt.shape)
-
-usv = uk*sk*vkt
-
-print(usv.shape)
-print(usv)
-
-basis = []
-
-for bSize in range(600,950,50):
-    print(bSize)
