@@ -15,8 +15,7 @@ def mean_absolute_error(y_true_table, y_pred_table, avg_user_rating):
                 N += 1
                 sumN += abs(y_true_table[i][j] - (y_pred_table[i][j]))
     print("N is,", N)
-    mae = sumN/N
-    return mae
+    return sumN/N
 
 def read(filename):
     """
