@@ -105,11 +105,16 @@ m = np.dot(uk, np.sqrt(sk).T)
 n = np.dot(np.sqrt(sk), vk)
 pred_table = np.dot(m,n)
 
-for i in range(len(test_set)):
-    for j in range(len(test_set[i])):
-        if test_set[i][j] != 0:
-            print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
-            
+# for i in range(len(test_set)):
+#     for j in range(len(test_set[i])):
+#         if test_set[i][j] != 0:
+#             print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
+
+for i in range(len(train_set)):
+    for j in range(len(train_set[i])):
+        if train_set[i][j] != 0:
+            print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], train_set[i][j]))
+           
 
 
 print(pred_table.shape)
