@@ -39,13 +39,8 @@ def mean_absolute_error(y_true_table, y_pred_table, avg_user_rating):
                 sumN += abs(y_true_table[i][j] - (avg_user_rating[i] + y_pred_table[i][j]))
 
     mae = sumN/N
+    print(N)
     return mae
-
-# mae = mean_absolute_error(train_set, pred_table)
-# print(mae)
-
-# for basis_size in range(400, 601, 50):
-#     A = matrix[]
 
 def read(filename):
     """
@@ -80,7 +75,7 @@ def split_data(ur, split_percentage=0.2):
         #in the trainset, while the rest should be placed in the test set
         user_rating = ur[userIndex] #this is a list of tuples (movieid, rating)
         num_ratings = len(ur[userIndex])
-        training_choices = np.random.choice([i for i in range(num_ratings)], int(num_ratings*split_percentage))
+        training_choices = np.random.choice([i for i in range(num_ratings)], int(num_ratings*split_percentage), replace=False)
         #loop from 0 - 1682, these index numbers represent the movieid, and thus A[i][j] = user_rating
         avg = 0
         N = 0
@@ -99,43 +94,36 @@ def split_data(ur, split_percentage=0.2):
 
 k = 14
 user_ratings = read(ml_100k_dir+'/u.data')
-train_set, test_set, avg_user_rating = split_data(user_ratings, split_percentage=0.9)
-threshold_size = 600 #from research paper
+for i in [0.2, 0.5, 0.8]:
 
-u, s, v = np.linalg.svd(train_set[:threshold_size])
-uk = u[:,:k]
-sk = np.diag(s[:k])
-vk = v[:k]
-#fold in
-for i in range(threshold_size, 900):
-    print(i)
-    nu = np.array(train_set[i])
-    P = np.dot(np.dot(nu, vk.T), np.linalg.inv(sk))
-    uk = np.vstack([uk,P])
+    train_set, test_set, avg_user_rating = split_data(user_ratings, split_percentage=i)
+    threshold_size = 600 #from research paper
 
-#make predictions
-m = np.dot(uk, np.sqrt(sk).T)
-n = np.dot(np.sqrt(sk), vk)
-pred_table = np.dot(m,n)
+    u, s, v = np.linalg.svd(train_set[:threshold_size])
+    uk = u[:,:k]
+    sk = np.diag(s[:k])
+    vk = v[:k]
+    #fold in
+    for i in range(threshold_size, 943):
+        nu = np.array(train_set[i])
+        P = np.dot(np.dot(nu, vk.T), np.linalg.inv(sk))
+        uk = np.vstack([uk,P])
 
-# for i in range(len(test_set)):
-#     for j in range(len(test_set[i])):
-#         if test_set[i][j] != 0:
-#             print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
+    #make predictions
+    m = np.dot(uk, np.sqrt(sk).T)
+    n = np.dot(np.sqrt(sk), vk)
+    pred_table = np.dot(m,n)
 
-# for i in range(len(train_set)):
-#     for j in range(len(train_set[i])):
-#         if train_set[i][j] != 0:
-#             print("prediction for %d,%d is %f and real is %f" % (i,j ,pred_table[i][j], train_set[i][j]))
-           
+    # for i in range(len(test_set)):
+    #     for j in range(len(test_set[i])):
+    #         if test_set[i][j] != 0:
+    #             print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
 
+    # for i in range(len(train_set)):
+    #     for j in range(len(train_set[i])):
+    #         if train_set[i][j] != 0:
+    #             print("prediction for %d,%d is %f and real is %f" % (i,j ,pred_table[i][j], train_set[i][j]))
+            
 
-print(pred_table.shape)
-mae = mean_absolute_error(test_set[:900], pred_table, avg_user_rating)
-
-print(mae)
-
-
-
-
-print(uk.shape)
+    mae = mean_absolute_error(test_set[:900], pred_table, avg_user_rating)
+    print(mae)
