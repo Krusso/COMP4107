@@ -3,15 +3,8 @@ import csv
 import os
 import pprint
 # from sklearn.metrics import mean_absolute_error
-def split(mat, x=0.8):
-    numTrainExamples = int(len(mat) * x)
-    # print(numTrainExamples)
-    training = mat[:numTrainExamples]
-    testing = mat[numTrainExamples:]
-    return training, testing
 
 ml_dir = './ml-latest-small'
-# MAX_RATINGS = 100000
 ml_100k_dir='./ml-100k'
 
 pp = pprint.PrettyPrinter(indent = 4)
@@ -24,14 +17,17 @@ k=14
 
 def mean_absolute_error(y_true_table, y_pred_table):
     sumN = 0
+    N = 0
     r = len(y_true_table)
     for i in range(r):
         c = len(y_true_table[i])
         row_average = sum(train_set[i])/len(train_set[i])
         for j in range(c):
-            sumN += abs(y_pred_table[i][j] - (row_average + y_pred_table[i][j]))
+            if y_true_table[i][j] != 0:
+                N += 1
+                sumN += abs(y_true_table[i][j] - (row_average + y_pred_table[i][j]))
 
-    mae = sumN/(r*c)
+    mae = sumN/N
     return mae
 
 # mae = mean_absolute_error(train_set, pred_table)
@@ -110,10 +106,10 @@ pred_table = np.dot(m,n)
 #         if test_set[i][j] != 0:
 #             print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], test_set[i][j]))
 
-for i in range(len(train_set)):
-    for j in range(len(train_set[i])):
-        if train_set[i][j] != 0:
-            print("prediction for %d,%d is %d and real is %d" % (i,j ,pred_table[i][j], train_set[i][j]))
+# for i in range(len(train_set)):
+#     for j in range(len(train_set[i])):
+#         if train_set[i][j] != 0:
+#             print("prediction for %d,%d is %f and real is %f" % (i,j ,pred_table[i][j], train_set[i][j]))
            
 
 
