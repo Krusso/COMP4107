@@ -16,4 +16,4 @@ sk = np.multiply(s[:k], np.identity(k)) # first k singular values
 
 Ak = np.dot(uk, np.dot(sk, vt))
 # We have computed A_(k=2), now determine |A - A_2|
-print(np.linalg.norm(A-Ak), )
+print("Norm", np.linalg.norm(A-Ak), )

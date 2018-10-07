@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import time
 
 ml_dir = './ml-latest-small'
-ml_100k_dir='./ml-100k'
+ml_100k_dir = './ml-100k'
+
 
 def mean_absolute_error(y_true_table, y_pred_table, avg_user_rating):
     sumN = 0
@@ -14,9 +15,9 @@ def mean_absolute_error(y_true_table, y_pred_table, avg_user_rating):
         for j in range(c):
             if y_true_table[i][j] != 0:
                 N += 1
-                sumN += abs(y_true_table[i][j] - (y_pred_table[i][j]))
-    print("N is,", N)
+                sumN += abs(y_true_table[i][j] - (avg_user_rating[i] + y_pred_table[i][j]))
     return sumN/N
+
 
 def read(filename):
     """
@@ -41,7 +42,7 @@ def show_graph(results):
     for result in results:
         x = [i[0] for i in result[1]]
         y = [j[1] for j in result[1]]
-        plt.plot(x, y, label=result[0])
+        plt.plot(x, y, label=result[0], linestyle='--', marker='o')
     plt.xlabel('Folding-in model size')
     plt.ylabel('MAE')
     plt.legend()
@@ -52,34 +53,22 @@ def show_graph_put(results):
     for result in results:
         x = [i[0] for i in result[1]]
         y = [j[1] for j in result[1]]
-        plt.plot(x, y, label=result[0])
+        plt.plot(x, y, label=result[0], linestyle='--', marker='o')
     plt.xlabel('Basis size')
     plt.ylabel('Throughput (predictions/sec)')
     plt.legend()
     plt.show()
+
+
 k = 14
 ratings, tuples, total = read(ml_100k_dir+'/u.data')
 
-movie_averages = np.true_divide(ratings.sum(0), (ratings != 0).sum(0))
 user_averages = np.true_divide(ratings.sum(1), (ratings != 0).sum(1))
-
-# !!!! EXPERIMENTAL !!!
-#
-#
-# for m in range(len(movie_averages)):
-#     for u in range(len(user_averages)):
-#         if ratings[u][m] != 0:
-#             ratings[u][m] = ratings[u][m] - movie_averages[m]
-
-for m in range(len(movie_averages)):
-    for u in range(len(user_averages)):
-        if ratings[u][m] != 0:
-            ratings[u][m] = ratings[u][m] - user_averages[u]
-# !!!! END EXPERIMENTAL !!!
 
 resultGraph = []
 timeGraph = []
 for split_percentage in list([0.2, 0.5, 0.8]):
+    print("Split percentage", split_percentage)
     subset = np.random.choice(total, int(total * split_percentage), replace=False)
     train_set = []
     train_data = np.zeros((943, 1682))
@@ -89,7 +78,7 @@ for split_percentage in list([0.2, 0.5, 0.8]):
         t = tuples[d]
         if d in subset:
             train_set.append(d)
-            train_data[t[0]][t[1]] = ratings[t[0]][t[1]]
+            train_data[t[0]][t[1]] = ratings[t[0]][t[1]] - user_averages[t[0]]
         else:
             test_set.append(d)
             test_data[t[0]][t[1]] = ratings[t[0]][t[1]]
@@ -97,6 +86,7 @@ for split_percentage in list([0.2, 0.5, 0.8]):
     results = []
     times = []
     for b in list([600, 650, 700, 750, 800, 850, 900, 943]):
+        print("Basis size", b)
         threshold_size = b  # from research paper
         start = time.time()
         u, s, v = np.linalg.svd(train_data[:threshold_size])
@@ -113,15 +103,15 @@ for split_percentage in list([0.2, 0.5, 0.8]):
         # make predictions
         m = np.dot(uk, np.sqrt(sk).T)
         n = np.dot(np.sqrt(sk), vk)
-        pred_table = np.dot(m,n)
+        pred_table = np.dot(m, n)
 
-        print("Pred", pred_table.shape)
-        print("Test", len(test_set))
-        print("Train", len(train_set))
         mae = mean_absolute_error(test_data[:943], pred_table, user_averages)
         end = time.time()
-        print(mae)
-        print(uk.shape)
+
+        print("Mae", mae)
+        print("Time start", start, "Time End", end, "Elapsed", (end - start), "Throughput",
+              len(test_set) / (end - start))
+
         results.append((b, mae))
         times.append((b, len(test_set) / (end - start)))
 
