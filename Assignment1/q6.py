@@ -46,11 +46,6 @@ def read(dataset="training", path="./"):
         digits.append((d, list(map(lambda x: transform(x[1]), filter(lambda x: x[0] == d, combined)))))
 
     return digits
-    # get_img = lambda idx: (lbl[idx], img[idx])
-
-    # Create an iterator which returns each image in turn
-    # for i in range(len(lbl)):
-    #    yield get_img(i)
 
 
 def show(image):
