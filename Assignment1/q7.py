@@ -42,7 +42,7 @@ def show_graph(results):
     for result in results:
         x = [i[0] for i in result[1]]
         y = [j[1] for j in result[1]]
-        plt.plot(x, y, label=result[0])
+        plt.plot(x, y, label=result[0], linestyle='--', marker='o')
     plt.xlabel('Folding-in model size')
     plt.ylabel('MAE')
     plt.legend()
@@ -53,7 +53,7 @@ def show_graph_put(results):
     for result in results:
         x = [i[0] for i in result[1]]
         y = [j[1] for j in result[1]]
-        plt.plot(x, y, label=result[0])
+        plt.plot(x, y, label=result[0], linestyle='--', marker='o')
     plt.xlabel('Basis size')
     plt.ylabel('Throughput (predictions/sec)')
     plt.legend()

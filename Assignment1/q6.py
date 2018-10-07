@@ -74,7 +74,7 @@ def show_graph(results):
     """
     x = [i[0] for i in results]
     y = [j[1] for j in results]
-    plt.plot(x, y)
+    plt.plot(x, y, linestyle='--', marker='o')
     plt.xlabel('Basis')
     plt.ylabel('Classification Accuracy Percentage')
     plt.show()
