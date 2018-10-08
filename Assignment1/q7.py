@@ -105,7 +105,7 @@ for split_percentage in list([0.2, 0.5, 0.8]):
         n = np.dot(np.sqrt(sk), vk)
         pred_table = np.dot(m, n)
 
-        mae = mean_absolute_error(test_data[:943], pred_table, user_averages)
+        mae = mean_absolute_error(test_data, pred_table, user_averages)
         end = time.time()
 
         print("Mae", mae)
