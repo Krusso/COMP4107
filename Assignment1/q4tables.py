@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 table = []
 tolerance = 0.01
@@ -41,4 +42,7 @@ for stepSize in [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]:
     table.append([stepSize, iterations, x])
 print("%s \t %s \t %s" % ("Step Size", "Iterations", "x"))
 for i in table:
-    print("%f \t %d \t %s" % (i[0], i[1], i[2]))
+    if float("inf") in i[2] or float("-inf") in i[2]:
+        print("%f \t %d \t %s doesnt converge" % (i[0], i[1], i[2]))
+    else:
+        print("%f \t %d \t %s converges" % (i[0], i[1], i[2]))
