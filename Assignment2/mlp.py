@@ -4,6 +4,8 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 #Questions to ask:
 #Unsure of what it means for the train/test data to be taken from uniform grids (10x10 pairs of values for the training data, 9x9 pairs for the test data)
+
+#Todo, create a more flexible and reusable code later. 
 def init_weights(shape):
     return tf.Variable(tf.random_normal(shape, stddev=0.01))
 
@@ -41,6 +43,7 @@ py_x = model(X, w_h1, w_h2, w_o) #This returns us the outputs of our final layer
 
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y)) # compute costs
 train_op = tf.train.GradientDescentOptimizer(0.05).minimize(cost) # construct an optimizer
+#here for 1b, we need to create 2 other optimizers, namely the Momentum and RMSProp Optimizers) 
 predict_op = tf.argmax(py_x, 1) 
 
 saver = tf.train.Saver()
