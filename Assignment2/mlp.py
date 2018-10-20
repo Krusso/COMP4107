@@ -17,22 +17,28 @@ def model(X, w_h1, w_o):
 def f(x, y):
     return math.cos(x + 6*0.35 * y) + 2*0.35 * x * y
 
-# PREPARATION FOR DATA:
 
-# This example uses mnist, but we will generate data the function
-# f(x,y)=cos(x+6*0.35y) + 2*0.35xy where x,y is element of [-1,1]
-# The generated data should just be a list of tuples (x,y,label) or whatever,
-# just need to make sure we have a way of identifying the input and its associated label.
-# For now we can just pick an arbitrary number of data to generate, say 10,000 data.
-# Randomize the data using np.shuffle or something
-# and then split the data into 9:1 ratio for train:test sets (or whatever the answer is to the question we gotta ask).
-# Now randomly take 10% (again not sure how much)
-# of the data in the train set and put that into a validation set
-# The idea is for each training iteration (epoch), we train on the train set,
-# then validate the error on the validation set (Important, do NOT
-# train on the validation set, e.g use the optimizer on it then back propagate it.
-# Just test it like you would on a test set)
+mySet = set()
 
+creating = True
+while creating:
+    for x, y in zip(np.random.uniform(low=-1, high=1, size=(200,)),
+                    np.random.uniform(low=-1, high=1, size=(200,))):
+        if len(mySet) == 181:
+            creating = False
+            break
+        mySet.add((x, y))
+
+myList = list(mySet)
+labels = list([f(x, y) for x, y in mySet])
+
+trX = myList[0:100]
+trY = labels[0:100]
+print("size training", len(trX))
+
+teX = myList[100:181]
+teY = labels[100:181]
+print("size testing", len(teX))
 
 for size in [2, 8, 50]:
     size_h1 = tf.constant(size, dtype=tf.int32)
@@ -41,14 +47,15 @@ for size in [2, 8, 50]:
     Y = tf.placeholder("float", [None, 1])
 
     w_h1 = init_weights([2, size_h1])  # create symbolic variables
-    w_o = init_weights([w_h1, 1])  # once we remove w_h2, should fix the dimension for this layer
+    w_o = init_weights([size_h1, 1])  # once we remove w_h2, should fix the dimension for this layer
 
     py_x = model(X, w_h1, w_o)  # This returns us the outputs of our final layer in the model
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))  # compute costs
+    cost = tf.losses.mean_squared_error(labels=Y, predictions=py_x)
     train_op = tf.train.GradientDescentOptimizer(0.05).minimize(cost)  # construct an optimizer
     # here for 1b, we need to create 2 other optimizers, namely the Momentum and RMSProp Optimizers)
-    predict_op = tf.argmax(py_x, 1)
+    predict_op = py_x
 
     saver = tf.train.Saver()
 
@@ -56,19 +63,20 @@ for size in [2, 8, 50]:
     with tf.Session() as sess:
         # you need to initialize all variables
         tf.global_variables_initializer().run()
-        print(range(0, len(trX), 128))
+
         for i in range(3):
             # This runs a single iteration (epoch)
-            for start, end in zip(range(0, len(trX), 128), range(128, len(trX)+1, 128)):
+            for start in range(0, len(trX), 1):
                 # This feeds a single input into our neural network
-                sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end]})
+                #print("start, end", [np.array(trX[start])])
+                #print("start, end label", [[trY[start]]])
+                sess.run(train_op, feed_dict={X: [np.array(trX[start])], Y: [[trY[start]]]})
 
-            # After this for loop, we need to run a validation,
-            # meaning we tell the session to run a predict_op on all the test set
-            # calculating the MSE of our test set, at some point we will monitor this value
-            # and stop training when it reaches a certain threshold
-            # this is what is called early stopping
-            # Need to create a table variable before to keep track of the MSE values for the 3 different network sizes
-            print(i, np.mean(np.argmax(teY, axis=1) ==
-                             sess.run(predict_op, feed_dict={X: teX})))
+            predicted = sess.run(predict_op, feed_dict={X: teX})
+            for predicted, actual in zip (predicted, teY):
+                print("predicted", predicted, "actual", actual)
+
+            #print((teY - predicted)**2)
+            #print(np.mean((teY - predicted))**2)
+            print(i, np.sqrt(np.mean((teY - predicted))**2))
         saver.save(sess, "mlp/session.ckpt")
