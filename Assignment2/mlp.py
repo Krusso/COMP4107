@@ -54,7 +54,7 @@ with tf.Session() as sess:
     tf.global_variables_initializer().run()
     print(range(0,len(trX),128))
     for i in range(3):
-        #This runs a single iteration (epoch)
+        #This runs a single iteration (epoch) of batch size 128.
         for start, end in zip(range(0, len(trX), 128), range(128, len(trX)+1, 128)):
             #This feeds a single input into our neural network
             sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end]})
