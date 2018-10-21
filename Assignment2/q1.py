@@ -42,14 +42,14 @@ with tf.Session() as sess:
     tf.global_variables_initializer().run()
     print(range(0,len(trX),128))
     for i in range(3):
-        for start, end in zip(range(0, len(trX), 128), range(128, len(trX)+1, 128)):
-            print("Start end", start, end)
+        for start, end in zip(range(0, len(trX), 2), range(128, len(trX)+1, 2)):
+            #print("Start end", start, end)
             sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end]})
             #print(trY[start:end])
-            print(trX[start:end])
-            print(np.shape(trX))
-            print(np.shape(trX[start:end]))
-            break
+            #print(trX[start:end])
+            #print(np.shape(trX))
+            #print(np.shape(trX[start:end]))
+            #break
         print(i, np.mean(np.argmax(teY, axis=1) ==
                          sess.run(predict_op, feed_dict={X: teX})))
     saver.save(sess,"mlp/session.ckpt")
