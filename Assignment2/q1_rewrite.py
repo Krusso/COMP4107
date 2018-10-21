@@ -2,22 +2,23 @@ import tensorflow as tf
 import numpy as np 
 import matplotlib.pyplot as plt
 
-#Function approximator model
+# Function approximator model
 def model(x, hidden_dim = 8):
-    input_dim = 2 #we got x and y as our inputs
-    output_dim = 1 #just one value as output
-    
+    input_dim = 2 # we got x and y as our inputs
+    output_dim = 1 # just one value as output
+    stdev = 0.5
     with tf.variable_scope('FunctionApproximator'):
-        w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim], initializer=tf.random_normal_initializer(stddev=1))
+        w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim], initializer=tf.random_normal_initializer(stddev=stdev))
         b_h1 = tf.get_variable('b_h1', shape=[hidden_dim], initializer=tf.constant_initializer(0.))
 
         z = tf.nn.sigmoid(tf.matmul(x, w_h1) + b_h1)
 
-        w_o = tf.get_variable('w_o', shape=[hidden_dim, output_dim], initializer=tf.random_normal_initializer(stddev=1))
+        w_o = tf.get_variable('w_o', shape=[hidden_dim, output_dim], initializer=tf.random_normal_initializer(stddev=stdev))
 
     return tf.matmul(z, w_o)
 
-#Function we are approximating
+
+# Function we are approximating
 # def f(input):
 #     print(input[0], input[1])
 #     return np.cos(input[0] + 6 * 0.35 * input[1]) + 2 * 0.35 * input[0] * input[1]
@@ -37,8 +38,9 @@ def generate_data():
             mySet.append(dataInput)
     myList = list(mySet)
     labels = list([[f(x, y)] for x, y in myList])
-    #return training inputs, training outputs, testing inputs, testing outputs
+    # return training inputs, training outputs, testing inputs, testing outputs
     return myList[:100], labels[:100], myList[100:], labels[100:]
+
 
 trX, trY, teX, teY = generate_data()
 print(trX)
@@ -47,7 +49,7 @@ with tf.variable_scope('Graph') as scope:
     y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
     
     #output of our model
-    y_pred = model(x, hidden_dim = 8)
+    y_pred = model(x, hidden_dim=8)
     
     with tf.variable_scope('Loss'):
         loss = tf.reduce_mean(tf.square(y_true - y_pred))
@@ -71,29 +73,32 @@ with tf.Session() as sess:
     fig = plt.figure()
     ax = fig.add_subplot(111)
     u = np.linspace(-1, 1, 5)
-    x, y = np.meshgrid(u, u)
+    x1, y1 = np.meshgrid(u, u)
 
-    cs = ax.contour(x, y, f(x, y))
-    plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs.norm(cs.levels)))
-    plt.colorbar(cs)
-    plt.show()
+    #cs = ax.contour(x1, y1, f(x1, y1))
+    #plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs.norm(cs.levels)))
+    #plt.colorbar(cs)
+    #plt.show()
 
 
     # print(x, y)
-    com = np.vstack((x.flatten(), y.flatten())).T
+    com = np.vstack((x1.flatten(), y1.flatten())).T
     teX = []
     for i in range(len(com)):
         print(com[i])
         teX.append(com[i])
     print('teX',teX)
     print('com',com)
-    predicted = sess.run(predict_op, feed_dict={x: trX})
-    # predicted = np.reshape(predicted, (-1, 5))
-    # print(predicted)
+    predicted = sess.run(predict_op, feed_dict={x: com})
+    predicted = np.reshape(predicted, (-1, 5))
+    print(predicted)
     # print(x)
     # for i in com:
     #     print(f(i[0],i[1]))
-    cs = ax.contour(x, y, predicted)
+    cs = ax.contour(x1, y1, predicted)
+    plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs.norm(cs.levels)))
+    plt.colorbar(cs)
+    plt.show()
     # plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs.norm(cs.levels)))
 
 
