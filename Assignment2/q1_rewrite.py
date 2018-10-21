@@ -54,6 +54,7 @@ with tf.variable_scope('Graph') as scope:
 
     train_op = tf.train.GradientDescentOptimizer(learning_rate=0.1).minimize(loss)
     predict_op = y_pred
+
 saver = tf.train.Saver()
 
 with tf.Session() as sess:
@@ -64,7 +65,7 @@ with tf.Session() as sess:
     for i in range(100):
         for start, end in zip(range(0, len(trX), 10), range(10, len(trY) + 1, 10)):
             curr_loss, _ = sess.run([loss, train_op], feed_dict={x:trX[start:end], y_true: trY[start:end]})
-
+            predicted = sess.run(predict_op, feed_dict={x:trX[start:end]})
         print("Epoch {}: Loss: {}".format(i, curr_loss))
     
     fig = plt.figure()
@@ -86,7 +87,7 @@ with tf.Session() as sess:
         teX.append(com[i])
     print('teX',teX)
     print('com',com)
-    predicted = sess.run(predict_op, feed_dict={x: teX})
+    predicted = sess.run(predict_op, feed_dict={x: trX})
     # predicted = np.reshape(predicted, (-1, 5))
     # print(predicted)
     # print(x)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Todo, create a more flexible and reusable code later.
 def init_weights(shape):
-    return tf.Variable(tf.random_normal(shape, stddev=0.005))
+    return tf.Variable(tf.random_normal(shape, stddev=0.5))
 
 
 def model(X, w_h1, w_o, bias):
@@ -59,7 +59,7 @@ for size in [8]:
     Y = tf.placeholder("float", [None, 1])
 
     w_h1 = init_weights([2, size_h1])  # create symbolic variables
-    bias_h1 = tf.Variable(tf.random_normal([1], stddev=0.01))
+    bias_h1 = tf.Variable(tf.random_normal([1], stddev=0.5))
     w_o = init_weights([size_h1, 1])  # once we remove w_h2, should fix the dimension for this layer
 
     py_x = model(X, w_h1, w_o, bias_h1)  # This returns us the outputs of our final layer in the model
@@ -68,7 +68,7 @@ for size in [8]:
     # cost = tf.losses.mean_squared_error(labels=Y, predictions=py_x)
     cost = tf.reduce_mean(tf.square(py_x - Y))
     # cost = tf.reduce_mean(cost)
-    train_op = tf.train.AdamOptimizer(0.01).minimize(cost)  # construct an optimizer
+    train_op = tf.train.GradientDescentOptimizer(0.1).minimize(cost)  # construct an optimizer
     # here for 1b, we need to create 2 other optimizers, namely the Momentum and RMSProp Optimizers)
     predict_op = py_x
 
@@ -80,7 +80,7 @@ for size in [8]:
         tf.global_variables_initializer().run()
         for i in range(100):
             # This runs a single iteration (epoch)
-            for start, end in zip(range(0, len(trX), 100), range(2, len(trY) + 1, 100)):
+            for start, end in zip(range(0, len(trX), 10), range(10, len(trY) + 1, 10)):
                 print('Weight h1',sess.run(w_h1))
                 print('bias',sess.run(bias_h1))
                 print('w_o',sess.run(w_o))
