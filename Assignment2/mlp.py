@@ -15,7 +15,7 @@ def model(X, w_h1, w_o):
 
 
 def f(x, y):
-    return np.cos(x + 6*0.35 * y) + 2 * 0.35 * x * y
+    return np.cos(x + 6 * 0.35 * y) + 2 * 0.35 * x * y
 
 
 mySet = set()
@@ -72,14 +72,9 @@ for size in [8]:
         tf.global_variables_initializer().run()
 
         # This runs a single iteration (epoch)
-        print("len", len(trX))
-        j = 0
-        for i in range(10):
-            for start, end in zip(range(0, len(trX), 2), range(2, len(trX) + 1, 2)):
-                j = j + 1
-                sess.run(train_op, feed_dict={X: np.array(trX[start:end]), Y: trY[start:end]})
-
-        print(j)
+        for start, end in zip(range(0, len(trX), 2), range(2, len(trX) + 1, 2)):
+            print(trX[start:end])
+            sess.run(train_op, feed_dict={X: np.array(trX[start:end]), Y: trY[start:end]})
 
         u = np.linspace(-1, 1, 100)
         x, y = np.meshgrid(u, u)
