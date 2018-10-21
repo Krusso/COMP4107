@@ -43,10 +43,11 @@ print("size testing", len(teX))
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
-u = np.linspace(-1, 1, 100)
+u = np.linspace(-1, 1, 5)
 x, y = np.meshgrid(u, u)
+print(x)
 
-for size in [8]:
+for size in [2, 8, 50]:
     print("Size", size)
     size_h1 = tf.constant(size, dtype=tf.int32)
 
@@ -60,7 +61,7 @@ for size in [8]:
 
     #cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))  # compute costs
     cost = tf.losses.mean_squared_error(labels=Y, predictions=py_x)
-    train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost)  # construct an optimizer
+    train_op = tf.train.GradientDescentOptimizer(0.001).minimize(cost)  # construct an optimizer
     # here for 1b, we need to create 2 other optimizers, namely the Momentum and RMSProp Optimizers)
     predict_op = py_x
 
@@ -71,12 +72,12 @@ for size in [8]:
         # you need to initialize all variables
         tf.global_variables_initializer().run()
 
-        # This runs a single iteration (epoch)
-        for start, end in zip(range(0, len(trX), 2), range(2, len(trX) + 1, 2)):
-            print(trX[start:end])
-            sess.run(train_op, feed_dict={X: np.array(trX[start:end]), Y: trY[start:end]})
+        for i in range(10):
+            # This runs a single iteration (epoch)
+            for start, end in zip(range(0, len(trX), 2), range(2, len(trX) + 1, 2)):
+                sess.run(train_op, feed_dict={X: np.array(trX[start:end]), Y: trY[start:end]})
 
-        u = np.linspace(-1, 1, 100)
+        u = np.linspace(-1, 1, 5)
         x, y = np.meshgrid(u, u)
 
         predicted = sess.run(predict_op, feed_dict={X: teX})
@@ -84,12 +85,12 @@ for size in [8]:
 
         com = np.vstack((x.flatten(), y.flatten())).T
         predicted = sess.run(predict_op, feed_dict={X: com})
-        predicted = np.reshape(predicted, (-1, 100))
+        predicted = np.reshape(predicted, (-1, 5))
         print(predicted)
+        print(x)
 
         cs = ax.contour(x, y, predicted)
         plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs.norm(cs.levels)))
-        #plt.colorbar(cs)
 
         saver.save(sess, "mlp/session.ckpt")
 
