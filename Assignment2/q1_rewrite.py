@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def model(x, hidden_dim = 8):
     input_dim = 2 # we got x and y as our inputs
     output_dim = 1 # just one value as output
-    stdev = 0.8
+    stdev = 2
     with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim], initializer=tf.random_normal_initializer(stddev=stdev))
         b_h1 = tf.get_variable('b_h1', shape=[hidden_dim], initializer=tf.constant_initializer(0.))
@@ -42,7 +42,7 @@ def generate_data():
 trX, trY, teX, teY = generate_data()
 
 
-for size in [2,8,50]:
+for size in [2, 8, 50]:
     tf.reset_default_graph()
     print("Training with {} number of hidden neurons".format(size))
     with tf.variable_scope('Graph') as scope:
@@ -52,7 +52,7 @@ for size in [2,8,50]:
         y_pred = model(x, hidden_dim=size)
         with tf.variable_scope('Loss'):
             loss = tf.reduce_mean(tf.square(y_true - y_pred))
-        train_op = tf.train.GradientDescentOptimizer(learning_rate=0.3).minimize(loss)
+        train_op = tf.train.GradientDescentOptimizer(learning_rate=0.02).minimize(loss)
         predict_op = y_pred
     
     saver = tf.train.Saver()
@@ -63,7 +63,8 @@ for size in [2,8,50]:
             for start, end in zip(range(0, len(trX), 10), range(10, len(trY) + 1, 10)):
                 curr_loss, _ = sess.run([loss, train_op], feed_dict={x:trX[start:end], y_true: trY[start:end]})
                 predicted = sess.run(predict_op, feed_dict={x:trX[start:end]})
-            print("Epoch {}: Loss: {}".format(i, curr_loss))
+            # print("Epoch {}: Loss: {}".format(i, curr_loss))
+        print("{} Neurons results in a {} MSE".format(size,curr_loss))
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -84,8 +85,8 @@ for size in [2,8,50]:
         plt.colorbar(cs)
 
 
-cs = ax.contour(x1, y1, f(x1, y1))
-plt.colorbar(cs)
+# cs = ax.contour(x1, y1, f(x1, y1))
+# plt.colorbar(cs)
 plt.show()
         # plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs.norm(cs.levels)))
 
