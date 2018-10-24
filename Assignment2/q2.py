@@ -95,7 +95,6 @@ question = 'b'
 
 print(len(trainingX))
 #For question 2a
-
 recog_error = [] #list of errors for 
 for size in [5, 10, 15, 20, 25]:
     recog_error.append([])
