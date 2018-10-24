@@ -23,8 +23,10 @@ def model(x, hidden_dim=8):
     output_dim = 1  # just one value as output
     if question == "a":
         stdev = .5
-    else:
+    elif question == "b":
         stdev = 0.01
+    else:
+        stdev = 2
 
     with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim],
@@ -94,7 +96,7 @@ def generate_data():
     while creating:
         for x, y in zip(np.random.uniform(low=-1, high=1, size=(200,)),
                         np.random.uniform(low=-1, high=1, size=(200,))):
-            if len(mySet) == 181:
+            if len(mySet) == 200:
                 creating = False
                 break
             dataInput = [x, y]
@@ -191,6 +193,8 @@ elif question == "b":
     table = []
     mses = []
     cpus = []
+    ac = []
+    acC = []
     for train in [("traingd", tf.train.GradientDescentOptimizer(learning_rate=0.02)),
                   ("traingdm", tf.train.MomentumOptimizer(learning_rate=0.02, momentum=0.02)),
                   ("traingrms", tf.train.RMSPropOptimizer(learning_rate=0.02))]:
@@ -221,7 +225,7 @@ elif question == "b":
                     sess.run(train_op, feed_dict={x: trX[start:end], y_true: trY[start:end]})
 
                 end = time.time()
-                error = sess.run(loss, feed_dict={x: teX, y_true: teY})
+                error = sess.run(loss, feed_dict={x: trX, y_true: trY})
                 mse.append([train[0], error])
                 cpu.append([train[0], end - start_time])
 
@@ -229,6 +233,7 @@ elif question == "b":
                     print("Converged at epoch", i)
                     converged = True
                     epoch = i + 1
+                    acC.append((train[0], error, sess.run(loss, feed_dict={x: teX, y_true: teY})))
 
             cpus.append(cpu)
             mses.append(mse)
@@ -236,6 +241,8 @@ elif question == "b":
             print("Training method {} resulted in a {} MSE, number of epochs: {}".format(
                 train_op,
                 sess.run(loss, feed_dict={x: trX, y_true: trY}), i))
+            ac.append((train[0], sess.run(loss, feed_dict={x: trX, y_true: trY}),
+                        sess.run(loss, feed_dict={x: teX, y_true: teY})))
 
     print("%s \t %s" % ("Training Style", "epochs to convergence"))
     for i in table:
@@ -243,3 +250,64 @@ elif question == "b":
 
     show_graph(mses, "Epoch", "MSE")
     show_graph_bar(cpus, "Epoch", "CPU Time per epoch (s)")
+
+    print("The training method with the best accuracy wrt to training data at the end of the 100 epochs is",
+          sorted(ac, key=lambda q: q[1])[0][0], "with an mse of", sorted(ac, key=lambda q: q[1])[0][1])
+
+    print("The training method with the best accuracy wrt to training data when training error is reached is",
+          sorted(acC, key=lambda q: q[1])[0][0], "with an mse of", sorted(ac, key=lambda q: q[1])[0][1])
+
+    print("The training method with the best accuracy wrt to testing data at the end of the 100 epochs is",
+          sorted(ac, key=lambda q: q[2])[0][0], "with an mse of", sorted(ac, key=lambda q: q[2])[0][1])
+
+    print("The training method with the best accuracy wrt to testing data when training error is reached is",
+          sorted(acC, key=lambda q: q[2])[0][0], "with an mse of", sorted(ac, key=lambda q: q[2])[0][1])
+
+if question == "c":
+
+
+    for size in [8]:
+        tf.reset_default_graph()
+        print("Training with {} number of hidden neurons".format(size))
+        with tf.variable_scope('Graph') as scope:
+            x = tf.placeholder("float", shape=[None, 2], name='inputs')
+            y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
+            # output of our model
+            y_pred = model(x, hidden_dim=size)
+            with tf.variable_scope('Loss'):
+                loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
+            train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
+            predict_op = y_pred
+
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            converged = False
+            epoch = "Didnt converge"
+            failures = 0
+            previous = float("inf")
+            i = 0
+            while True:
+                i+=1
+                batch_size = 1
+                for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
+                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
+                if i % 50 == 0:
+                    print("Epoch", i, failures, sess.run(loss, feed_dict={x: teX, y_true: teY}))
+                    print("Epoch", i, failures, sess.run(loss, feed_dict={x: trX, y_true: trY}))
+
+                if sess.run(loss, feed_dict={x: teX, y_true: teY}) < 0.02 and not converged:
+                    print("Converged at epoch", i, "with RMSE of", sess.run(loss, feed_dict={x: teX, y_true: teY}))
+                    converged = True
+                    epoch = i + 1
+                    break
+                if sess.run(loss, feed_dict={x: vX, y_true: vY}) > previous:
+                    previous = sess.run(loss, feed_dict={x: vX, y_true: vY})
+                    failures = failures + 1
+                    if failures == 10:
+                        print("Early stopping")
+                        break
+                else:
+                    failures = 0
+                    previous = sess.run(loss, feed_dict={x: vX, y_true: vY})
