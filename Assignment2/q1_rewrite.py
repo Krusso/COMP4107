@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 def model(x, hidden_dim = 8):
     input_dim = 2 # we got x and y as our inputs
     output_dim = 1 # just one value as output
-    stdev = 0.01
+    stdev = 1
     with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim], initializer=tf.random_normal_initializer(stddev=stdev))
-        b_h1 = tf.get_variable('b_h1', shape=[hidden_dim], initializer=tf.constant_initializer(0.))
+        b_h1 = tf.get_variable('b_h1', shape=[hidden_dim], initializer=tf.constant_initializer(0.1))
 
         z = tf.nn.tanh(tf.matmul(x, w_h1) + b_h1)
 
@@ -63,12 +63,12 @@ for size in [2, 8, 50]:
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
-        for i in range(10000):
+        for i in range(1000):
             batch_size = 5
             for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
                 curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
                 predicted = sess.run(predict_op, feed_dict={x: trX[start:end]})
-            if sess.run(loss, feed_dict={x: trX, y_true: trY}) < 0.002:
+            if sess.run(loss, feed_dict={x: trX, y_true: trY}) < 0.01:
                 break
                     
             # print("Epoch {}: Loss: {}".format(i, curr_loss))
