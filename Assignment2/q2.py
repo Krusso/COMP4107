@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 def model(x, hidden_dim=8):
     input_dim = 35
     output_dim = 31
-    stdev = 0.01
-    with tf.variable_scope('FunctionApproximator', reuse=tf.AUTO_REUSE):
+    stdev = 0.1
+    with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim],
                                initializer=tf.random_normal_initializer(stddev=stdev))
-        b_h1 = tf.get_variable('b_h1', shape=[hidden_dim], initializer=tf.constant_initializer(0.01))
-        # TODO: @michael using sigmoid but notes say something about logsig?
+        b_h1 = tf.get_variable('b_h1', shape=[hidden_dim], initializer=tf.random_normal_initializer(stddev=stdev))
+
         z = tf.nn.sigmoid(tf.matmul(x, w_h1) + b_h1)
 
         w_o = tf.get_variable('w_o', shape=[hidden_dim, output_dim],
@@ -50,12 +50,12 @@ for noise in [0, 1, 2, 3]:
 
 # training on images with nosie of 0 and 3
 # can do np.vstack((trX[0], trX[1], trX[2], trX[3])) to train on all noises
-trainingX = np.vstack((trX[0], trX[3]))
-trainingY = np.vstack((trY[0], trY[3]))
-#trainingX = trX[0]
-#trainingY = trY[0]
+#trainingX = np.vstack((trX[0], trX[3]))
+#trainingY = np.vstack((trY[0], trY[3]))
+trainingX = trX[0]
+trainingY = trY[0]
 idx = np.random.permutation(len(trainingX))
-batchSize = 4
+batchSize = 1
 
 data = []
 labels = []
@@ -70,38 +70,48 @@ for j in range(0, len(idx), batchSize):
         data[int(j/batchSize)].append(trainingX[idx[j + k]])
         labels[int(j/batchSize)].append(trainingY[idx[j + k]])
 print(len(trainingX))
+for size in [10, 15]:
+    tf.reset_default_graph()
+    print("Training with {} number of hidden neurons".format(size))
+    with tf.variable_scope('Graph') as scope:
+        x = tf.placeholder("float", shape=[None, 35], name='inputs')
+        y_true = tf.placeholder("float", shape=[None, 31], name='y_true')
+        # output of our model
+        y_pred = model(x, hidden_dim=size)
+        with tf.variable_scope('Loss'):
+            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_pred, labels=y_true))  # compute costs
+        train_op = tf.train.AdamOptimizer(0.01).minimize(loss)
+        predict_op = tf.argmax(y_pred, 1)
 
-for size in [15]:
-
-
-    for noise in [0, 1, 2, 3]:
-        tf.reset_default_graph()
-        with tf.variable_scope('Graph') as scope:
-            x = tf.placeholder("float", shape=[None, 35], name='inputs')
-            y_true = tf.placeholder("float", shape=[None, 31], name='y_true')
-            # output of our model
-            y_pred = model(x, hidden_dim=size)
-            with tf.variable_scope('Loss'):
-                loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_pred, labels=y_true))  # compute costs
-            train_op = tf.train.AdamOptimizer(learning_rate=0.01).minimize(loss)
-            predict_op = tf.argmax(y_pred, 1)        
-        print("Training with {} number of hidden neurons".format(size))
         saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
 
-            for i in range(40):
+            loss_list = []
+            epochs = [i for i in range(500)]
+            for i in range(500):
+                average_loss = 0
+                counter = 0
                 for j in range(0, len(data)):
                     curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
+                    counter += 1
+                    average_loss += curr_loss
+                average_loss /= counter
+                if i % 25 == 0:
+                    print(i, curr_loss)
+                loss_list.append(average_loss)
             
-            print(curr_loss)
-            print(np.argmax(trY[noise], axis=1))
-            print(sess.run(predict_op, feed_dict={x: trX[noise]}))
+            plt.plot(epochs,loss_list)
+            plt.ylabel('Training Error')
+            plt.yscale('log')
+            plt.show()
+            for noise in [0, 1, 2, 3]:
+                print(np.argmax(trY[noise], axis=1))
+                print(sess.run(predict_op, feed_dict={x: trX[noise]}))
 
-            print(i, "noise", noise, "Error", 1 - (np.mean(np.argmax(trY[noise], axis=1) ==
-                    sess.run(predict_op, feed_dict={x: trX[noise]}))))
-        
-    print("done")
+                print(i, "noise", noise, "Error", 1 - (np.mean(np.argmax(trY[noise], axis=1) ==
+                        sess.run(predict_op, feed_dict={x: trX[noise]}))))
+
 
 
 
