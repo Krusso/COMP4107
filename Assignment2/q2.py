@@ -156,8 +156,6 @@ for size in [15]:
         y_pred = model(x, hidden_dim=size)
         with tf.variable_scope('Loss'):
             cost = tf.nn.softmax_cross_entropy_with_logits(logits=y_pred, labels=y_true)
-            # cost = tf.nn.sigmoid(y_pred)
-            # loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_pred, labels=y_true))
             loss = tf.reduce_mean(cost)  # compute costs
         train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
         predict_op = tf.argmax(y_pred, 1)
