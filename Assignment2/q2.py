@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 def model(x, hidden_dim=8):
     input_dim = 35
     output_dim = 31
-    stdev = 1
+    stdev = .3
     with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim],
                                initializer=tf.random_normal_initializer(stddev=stdev))
@@ -69,7 +69,7 @@ for j in range(0, len(idx), batchSize):
         print(j + k)
         data[int(j/batchSize)].append(trainingX[idx[j + k]])
         labels[int(j/batchSize)].append(trainingY[idx[j + k]])
-print(len(trainingX))
+
 
 for size in [10, 15]:
     tf.reset_default_graph()
@@ -81,7 +81,7 @@ for size in [10, 15]:
         y_pred = model(x, hidden_dim=size)
         with tf.variable_scope('Loss'):
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_pred, labels=y_true))  # compute costs
-        train_op = tf.train.AdamOptimizer().minimize(loss)
+        train_op = tf.train.AdamOptimizer(learning_rate=0.05).minimize(loss)
         predict_op = tf.argmax(y_pred, 1)
 
         saver = tf.train.Saver()
