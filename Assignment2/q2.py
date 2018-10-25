@@ -52,20 +52,6 @@ def randomizeTestingPoints():
             trY[noise][int(i / 8)][int(i / 8)] = 1
     return trX, trY
 
-trX, trY = randomizeTestingPoints()
-
-# training on images with nosie of 0 and 3
-# can do np.vstack((trX[0], trX[1], trX[2], trX[3])) to train on all noises
-#trainingX = np.vstack((trX[0], trX[3]))
-#trainingY = np.vstack((trY[0], trY[3]))
-trainingX = trX[0]
-trainingY = trY[0]
-idx = np.random.permutation(len(trainingX))
-# idx = [i for i in idx] * 10
-np.random.shuffle(idx)
-# print('INDEX', idx)
-batchSize = 2
-
 def get_random_data(x_data, y_data, batch_size=2):
     idx = np.random.permutation(len(x_data))
     data = []
@@ -80,18 +66,14 @@ def get_random_data(x_data, y_data, batch_size=2):
             labels[int(j/batchSize)].append(y_data[idx[(j + k)]])
     return data, labels   
 
-data, labels = get_random_data(trainingX, trainingY, batchSize)
-question = 'b'
 
-# for j in range(0, len(idx), batchSize):
-#     data.append([])
-#     labels.append([])
-#     for k in range(0, batchSize):
-#         if j + k >= len(trainingX):
-#             break
-#         print(j + k)
-#         data[int(j/batchSize)].append(trainingX[idx[j + k]])
-#         labels[int(j/batchSize)].append(trainingY[idx[j + k]])
+
+trX, trY = randomizeTestingPoints()
+trainingX = trX[0]
+trainingY = trY[0]
+batchSize = 2
+
+data, labels = get_random_data(trainingX, trainingY, batchSize)
 
 print(len(trainingX))
 #For question 2a
@@ -145,6 +127,7 @@ plt.yscale('linear')
 plt.show()
 
 #For question 2b and c
+print('Question 2b and c')
 for size in [15]:
     tf.reset_default_graph()
     print("Training with {} number of hidden neurons".format(size))
@@ -202,34 +185,34 @@ for size in [15]:
             
             noisy_data = noisy_data1+noisy_data2+noisy_data3
             noisy_labels = noisy_labels1+noisy_labels2+noisy_labels3
-            
-            all_data = trX[0]+trX[1]+trX[2]+trX[3]
-            all_labels = trY[0]+trY[0]+trY[0]+trY[0]
-            error_rate_list = []
-            for i in range(10):
-                for j in range(0, len(noisy_data)):
-                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x:noisy_data[j], y_true: noisy_labels[j]})
-                # print(x)
-                # print(y_true)
-                er0 = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[1]})
-                er1 = sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[1]})
-                er2 = sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[1]})
-                er3 = sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[1]})
-                
-                er = (er0+er1+er2+er3)/4
-                error_rate_list.append(er)
+            #shuffle the data
+            random_idx = np.random.permutation(len(noisy_data))
+            random_noisy_data = []
+            random_noisy_label = []
+            for i in random_idx:
+                random_noisy_data.append(noisy_data[i])
+                random_noisy_label.append(noisy_labels[i])
 
+            error_rate_list = []
+            #train until performance goal for noisy data is 0.01 //we train for at least 10 times
+            counter = 0
+            for i in range(100):
+                for j in range(0, len(noisy_data)):
+                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x:random_noisy_data[j], y_true: random_noisy_label[j]})
+                er1 = sess.run(error_rate, feed_dict={x:trX[1], y_true:trY[0]})    
+                er2 = sess.run(error_rate, feed_dict={x:trX[2], y_true:trY[0]})   
+                er3 = sess.run(error_rate, feed_dict={x:trX[3], y_true:trY[0]})   
+                er = (er1 + er2 + er3)/3
+                counter += 1
+                if er < 0.01 and counter > 50:
+                    break
             #now retrain on on ideal set again
             for i in range(300):
                 for j in range(0, len(data)):
                     curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
                 
-                er0 = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[1]})
-                er1 = sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[1]})
-                er2 = sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[1]})
-                er3 = sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[1]})
-                
-                er = (er0+er1+er2+er3)/4
+                er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
+                print(er)
                 error_rate_list.append(er)
 
             # print(len(error_rate_list), error_rate_list)
@@ -238,7 +221,10 @@ for size in [15]:
             plt.ylabel('Training Error')
             plt.xlabel('Epochs')
             plt.yscale('log')
-            plt.show()
+            try:
+                plt.show()
+            except:
+                print("didn't work")
 
             #part c: create testing points
             fig, ax = plt.subplots()
