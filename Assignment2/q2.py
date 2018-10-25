@@ -77,7 +77,7 @@ data, labels = get_random_data(trainingX, trainingY, batchSize)
 
 print(len(trainingX))
 #For question 2a
-recog_error = [] #list of errors for 
+recog_error = [] #list of errors for
 for size in [5, 10, 15, 20, 25]:
     recog_error.append([])
     tf.reset_default_graph()
@@ -105,7 +105,7 @@ for size in [5, 10, 15, 20, 25]:
             for i in range(500):
                 for j in range(0, len(data)):
                     curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
-                
+
                 er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
                 error_rate_list.append(er)
             idx = int(size/5-1)

@@ -26,7 +26,7 @@ def model(x, hidden_dim=8):
     elif question == "b":
         stdev = 0.01
     else:
-        stdev = 2
+        stdev = 0.01
 
     with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim],
@@ -171,9 +171,9 @@ if question == "a":
     values.append((x1, y1, f(x1, y1)))
     plt.show()
 
-    print("%s \t %s \t %s" % ("Size", "MSE", "epochs to convergence"))
+    print("%s \t %s" % ("Size", "epochs to convergence"))
     for i in table:
-        print("%s \t %s \t %s" % (i[0], i[1], i[2]))
+        print("%s \t %s" % (i[0], i[2]))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -265,7 +265,6 @@ elif question == "b":
 
 if question == "c":
 
-
     for size in [8]:
         tf.reset_default_graph()
         print("Training with {} number of hidden neurons".format(size))
@@ -276,7 +275,7 @@ if question == "c":
             y_pred = model(x, hidden_dim=size)
             with tf.variable_scope('Loss'):
                 loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
-            train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
+            train_op = tf.train.RMSPropOptimizer(learning_rate=0.0005, centered=True, decay=0.9).minimize(loss)
             predict_op = y_pred
 
         saver = tf.train.Saver()
