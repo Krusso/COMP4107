@@ -194,19 +194,22 @@ for size in [15]:
                 random_noisy_label.append(noisy_labels[i])
 
             error_rate_list = []
-            #train until performance goal for noisy data is 0.01 //we train for at least 10 times
+            #train until performance goal for noisy data is 0.01 but we will be using 0.02 because the smallest value 
+            #the error can be where it is not 0 is 0.0107 which is greater than 0.01
             counter = 0
+            print('Training on noisy data')
             for i in range(100):
                 for j in range(0, len(noisy_data)):
                     curr_loss, _ = sess.run([loss, train_op], feed_dict={x:random_noisy_data[j], y_true: random_noisy_label[j]})
                 er1 = sess.run(error_rate, feed_dict={x:trX[1], y_true:trY[0]})    
                 er2 = sess.run(error_rate, feed_dict={x:trX[2], y_true:trY[0]})   
                 er3 = sess.run(error_rate, feed_dict={x:trX[3], y_true:trY[0]})   
-                er = (er1 + er2 + er3)/3
+                er = (er1 + er2 + er3)/3.0
                 counter += 1
-                if er < 0.01 and counter > 50:
+                if er <= 0.02:
                     break
-            #now retrain on on ideal set again
+            print('Done... training on ideal data again')
+            #now retrain on on ideal set again until the error is 0 or less than 0.01
             for i in range(300):
                 for j in range(0, len(data)):
                     curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
@@ -214,6 +217,9 @@ for size in [15]:
                 er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
                 print(er)
                 error_rate_list.append(er)
+                if er < 0.01:
+                    break
+                
 
             # print(len(error_rate_list), error_rate_list)
             epochs = [i for i in range(len(error_rate_list))]
