@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import time
 
-question = "c"
+question = "a"
 
 if len(sys.argv) == 2:
     if sys.argv[1] == "a":
