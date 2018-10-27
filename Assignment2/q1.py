@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import time
 
-question = "c"
+question = "a"
 
 if len(sys.argv) == 2:
     if sys.argv[1] == "a":
@@ -355,6 +355,3 @@ if question == "c":
                 # plt.legend(proxy, ['Target, without'])
                 plt.show()
                 break
-        ##now we are looking for an early stopping
-       
-            #Graph the 
