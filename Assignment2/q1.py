@@ -66,6 +66,7 @@ def show_graph_bar(results, xaxis, yaxis):
     plt.legend()
     plt.show()
 
+
 # Function we are approximating
 def f(x, y):
     return np.cos(x + 6 * 0.35 * y) + 2 * 0.35 * x * y
@@ -73,7 +74,6 @@ def f(x, y):
 
 def farray(x):
     return np.cos(x[0] + 6 * 0.35 * x[1]) + 2 * 0.35 * x[0] * x[1]
-
 
 
 def generate_data():
@@ -171,9 +171,9 @@ if question == "a":
     values.append((x1, y1, f(x1, y1)))
     plt.show()
 
-    print("%s \t %s \t %s" % ("Size", "MSE", "epochs to convergence"))
+    print("%s \t %s" % ("Size", "epochs to convergence"))
     for i in table:
-        print("%s \t %s \t %s" % (i[0], i[1], i[2]))
+        print("%s \t %s" % (i[0], i[2]))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -220,11 +220,11 @@ elif question == "b":
             epoch = "Didnt converge"
             for i in range(100):
                 batch_size = 1
-                start_time = time.time()
+                start_time = time.process_time()
                 for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
                     sess.run(train_op, feed_dict={x: trX[start:end], y_true: trY[start:end]})
 
-                end = time.time()
+                end = time.process_time()
                 error = sess.run(loss, feed_dict={x: trX, y_true: trY})
                 mse.append([train[0], error])
                 cpu.append([train[0], end - start_time])
@@ -242,7 +242,7 @@ elif question == "b":
                 train_op,
                 sess.run(loss, feed_dict={x: trX, y_true: trY}), i))
             ac.append((train[0], sess.run(loss, feed_dict={x: trX, y_true: trY}),
-                        sess.run(loss, feed_dict={x: teX, y_true: teY})))
+                       sess.run(loss, feed_dict={x: teX, y_true: teY})))
 
     print("%s \t %s" % ("Training Style", "epochs to convergence"))
     for i in table:
@@ -250,12 +250,6 @@ elif question == "b":
 
     show_graph(mses, "Epoch", "MSE")
     show_graph_bar(cpus, "Epoch", "CPU Time per epoch (s)")
-
-    print("The training method with the best accuracy wrt to training data at the end of the 100 epochs is",
-          sorted(ac, key=lambda q: q[1])[0][0], "with an mse of", sorted(ac, key=lambda q: q[1])[0][1])
-
-    print("The training method with the best accuracy wrt to training data when training error is reached is",
-          sorted(acC, key=lambda q: q[1])[0][0], "with an mse of", sorted(ac, key=lambda q: q[1])[0][1])
 
     print("The training method with the best accuracy wrt to testing data at the end of the 100 epochs is",
           sorted(ac, key=lambda q: q[2])[0][0], "with an mse of", sorted(ac, key=lambda q: q[2])[0][1])
@@ -269,89 +263,161 @@ if question == "c":
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    cs1 = ax.contour(x1, y1, f(x1, y1), colors='k')
-    plt.colorbar(cs1)
 
-    values = []
-    for size in [8]:
-        print("Training with {} number of hidden neurons".format(size))
-        #find network with convergence
-        converged = False
-        early_stopped = False
-        while True:
-            tf.reset_default_graph()
-            with tf.variable_scope('Graph') as scope:
-                x = tf.placeholder("float", shape=[None, 2], name='inputs')
-                y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
-                # output of our model
-                y_pred = model(x, hidden_dim=size)
-                with tf.variable_scope('Loss'):
-                    loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
-                train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
-                predict_op = y_pred
-            saver = tf.train.Saver()
+    values = [[], []]
 
-            with tf.Session() as sess:
-                sess.run(tf.global_variables_initializer())
-                epoch = "Didnt converge" #?? what is dis for
-                failures = 0
-                previous = float("inf")
-                i = 0
-                batch_size = 20
-                rmse_arr = []
-                while True:
-                    i+=1
-                    for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
-                        curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
-                    rmse = sess.run(loss, feed_dict={x:teX, y_true:teY})
-                    if rmse < 0.02 and converged:
-                        break
-                    elif rmse < 0.02 and not converged:
-                        converged = True
-                        epoch = i + 1
-                        print('Converged at {} epochs'.format(epoch))
+    trainings = [[], [], []]
+
+    for size in [8, 10, 15, 20, 30, 40, 50]:
+        tf.reset_default_graph()
+        with tf.variable_scope('Graph') as scope:
+            x = tf.placeholder("float", shape=[None, 2], name='inputs')
+            y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
+            # output of our model
+            y_pred = model(x, hidden_dim=size)
+            with tf.variable_scope('Loss'):
+                loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
+            train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
+            predict_op = y_pred
+        saver = tf.train.Saver()
+
+        i = 0
+        batch_size = 20
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            while True:
+                i += 1
+                for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
+                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
+                rmse = sess.run(loss, feed_dict={x: teX, y_true: teY})
+                if rmse < 0.02:
+                    print("Accuracy at convergence", rmse)
+                    break
+                if i % 1000 == 0:
+                    print("Epoch", i, rmse, "with size of", size)
+
+    # find network with convergence
+    converged = False
+    early_stopped = False
+    while True:
+        tf.reset_default_graph()
+        with tf.variable_scope('Graph') as scope:
+            x = tf.placeholder("float", shape=[None, 2], name='inputs')
+            y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
+            # output of our model
+            y_pred = model(x, hidden_dim=8)
+            with tf.variable_scope('Loss'):
+                loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
+            train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
+            predict_op = y_pred
+        saver = tf.train.Saver()
+
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            failures = 0
+            previous = float("inf")
+            i = 0
+            batch_size = 20
+            rmse_arr = []
+            while True:
+                i += 1
+                for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
+                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
+                rmse = sess.run(loss, feed_dict={x: teX, y_true: teY})
+                if rmse < 0.02 and converged:
+                    break
+                elif rmse < 0.02 and not converged:
+                    converged = True
+                    print('Converged at {} epochs'.format(i + 1))
+                    com = np.vstack((x1.flatten(), y1.flatten())).T
+                    predicted = sess.run(predict_op, feed_dict={x: com})
+                    predicted = np.reshape(predicted, (-1, 100))
+
+                    values[0] = ([x1, y1, predicted])
+
+                    if trainings[0] == []:
+                        trainings[0] = trainings[1]
+
+                    trainings[2] = [
+                        0.02 ** 2,
+                        np.square(sess.run(loss, feed_dict={x: teX, y_true: teY})),
+                        np.square(sess.run(loss, feed_dict={x: vX, y_true: vY})),
+                        np.square(sess.run(loss, feed_dict={x: trX, y_true: trY})),
+                    ]
+
+                    break
+
+                if i % 100 == 0:
+                    print("Epoch", i, failures, sess.run(loss, feed_dict={x: teX, y_true: teY}))
+                    print("Epoch", i, failures, sess.run(loss, feed_dict={x: trX, y_true: trY}))
+
+                if not converged and rmse < 0.0208:
+                    trainings[0] = trainings[1]
+                    trainings[1] = [
+                        0.02 ** 2,
+                        np.square(sess.run(loss, feed_dict={x: teX, y_true: teY})),
+                        np.square(sess.run(loss, feed_dict={x: vX, y_true: vY})),
+                        np.square(sess.run(loss, feed_dict={x: trX, y_true: trY})),
+                    ]
+
+                if sess.run(loss, feed_dict={x: vX, y_true: vY}) > previous:
+                    # if we already have a network with early_stopping, we want to just skip
+                    # this step
+                    if early_stopped:
+                        continue
+                    previous = sess.run(loss, feed_dict={x: vX, y_true: vY})
+                    failures = failures + 1
+                    if failures == 10:
+                        print("Early stopping at {}".format(i))
+                        early_stopped = True
+
                         com = np.vstack((x1.flatten(), y1.flatten())).T
                         predicted = sess.run(predict_op, feed_dict={x: com})
                         predicted = np.reshape(predicted, (-1, 100))
 
-                        values.append([x1, y1, predicted])
-                        cs = ax.contour(x1, y1, predicted, levels=cs1.levels, colors='r')
-                        ax.legend(cs, 'Without early stopping')
-                        # plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs1.norm(cs1.levels)))
+                        values[1] = ([x1, y1, predicted])
                         break
-                    if i % 100 == 0:
-                        print("Epoch", i, failures, sess.run(loss, feed_dict={x: teX, y_true: teY}))
-                        print("Epoch", i, failures, sess.run(loss, feed_dict={x: trX, y_true: trY}))
-                    
-                    
-                    if sess.run(loss, feed_dict={x: vX, y_true: vY}) > previous:
-                        #if we already have a network with early_stopping, we want to just skip
-                        #this step
-                        if early_stopped:
-                            continue
-                        previous = sess.run(loss, feed_dict={x: vX, y_true: vY})
-                        failures = failures + 1
-                        if failures == 10:
-                            print("Early stopping at {}".format(i))
-                            early_stopped = True
-                            epoch = i + 1
-                            
-                            com = np.vstack((x1.flatten(), y1.flatten())).T
-                            predicted = sess.run(predict_op, feed_dict={x: com})
-                            predicted = np.reshape(predicted, (-1, 100))
-                            
-                            values.append([x1, y1, predicted])
-                            cs = ax.contour(x1, y1, predicted, levels=cs1.levels, colors='g')
-                            ax.legend(cs.levels, 'with early stopping')
-                            # plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs1.norm(cs1.levels)))
-                            break
-                    else:
-                        failures = 0
-                        previous = sess.run(loss, feed_dict={x: vX, y_true: vY})        
-            if converged and early_stopped:
-                
-                values.append((x1, y1, f(x1, y1)))
-                # proxy = [plt.Rectangle((0,0),1,1, fc=pc.get_facecolor()[0]) for pc in cs1.collections ]
-                # plt.legend(proxy, ['Target, without'])
-                plt.show()
-                break
+                else:
+                    failures = 0
+                    previous = sess.run(loss, feed_dict={x: vX, y_true: vY})
+
+        if converged and early_stopped:
+            values.append((x1, y1, f(x1, y1)))
+
+            print(trainings)
+            plt.plot([0, 1, 2],
+                     [trainings[0][0], trainings[1][0], trainings[2][0]],
+                     label="goal", color="k")
+            plt.plot([0, 1, 2],
+                     [trainings[0][1], trainings[1][1], trainings[2][1]],
+                     label="test", color="r")
+            plt.plot([0, 1, 2],
+                     [trainings[0][2], trainings[1][2], trainings[2][2]],
+                     label="validation", color="g")
+            plt.plot([0, 1, 2],
+                     [trainings[0][3], trainings[1][3], trainings[2][3]],
+                     label="training", color="b")
+
+            plt.xlabel("2 epochs")
+            plt.ylabel("MSE")
+            plt.yscale("log")
+            plt.legend()
+            plt.show()
+
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            a = ax.contour(values[0][0], values[0][1], values[0][2], colors='g')
+            h, _ = a.legend_elements()
+            a2 = ax.contour(values[1][0], values[1][1], values[1][2], colors='b')
+            h1, _ = a2.legend_elements()
+            a1 = ax.contour(values[2][0], values[2][1], values[2][2], colors='r')
+            h2, _ = a1.legend_elements()
+
+            plt.clabel(a, fontsize=10, colors=plt.cm.Reds(a.norm(a.levels)))
+            ax.legend([h[0], h1[0], h2[0]], ['without early stopping',
+                                             'with early stopping',
+                                             'target'])
+
+            plt.show()
+            break
