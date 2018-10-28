@@ -22,7 +22,7 @@ def model(x, hidden_dim=8):
     input_dim = 2  # we got x and y as our inputs
     output_dim = 1  # just one value as output
     if question == "a":
-        stdev = .5
+        stdev = 1
     elif question == "b":
         stdev = 0.01
     else:
@@ -39,32 +39,6 @@ def model(x, hidden_dim=8):
                               initializer=tf.random_normal_initializer(stddev=stdev))
 
     return tf.matmul(z, w_o)
-
-
-def show_graph(results, xaxis, yaxis):
-    for result in results:
-        y = [i[1] for i in result]
-        x = [j + 1 for j in range(len(result))]
-        plt.plot(x, y, label=result[0][0], linestyle='--', marker='o')
-    plt.xlabel(xaxis)
-    plt.ylabel(yaxis)
-    plt.legend()
-    plt.show()
-
-
-def show_graph_bar(results, xaxis, yaxis):
-    x = np.array([j + 1 for j in range(len(results[0]))])
-    y = [i[1] for i in results[0]]
-    y1 = [i[1] for i in results[1]]
-    y2 = [i[1] for i in results[2]]
-    ax = plt.subplot(111)
-    ax.bar(x - 0.3, y, width=0.3, color='b', align='center', label="traingd")
-    ax.bar(x, y1, width=0.3, color='r', align='center', label="traingdm")
-    ax.bar(x + 0.3, y2, width=0.3, color='g', align='center', label="traingrms")
-    plt.xlabel(xaxis)
-    plt.ylabel(yaxis)
-    plt.legend()
-    plt.show()
 
 
 # Function we are approximating
@@ -110,7 +84,7 @@ def generate_data():
 trX, trY, teX, teY, vX, vY = generate_data()
 
 if question == "a":
-    u = np.linspace(-1, 1, 100)
+    u = np.linspace(-1, 1, 9)
     x1, y1 = np.meshgrid(u, u)
 
     fig = plt.figure()
@@ -119,61 +93,75 @@ if question == "a":
     plt.clabel(cs1, fontsize=10, colors=plt.cm.Reds(cs1.norm(cs1.levels)))
     plt.colorbar(cs1)
 
-    table = []
-    values = []
+    table = [np.zeros(3), np.zeros(3), np.zeros(3)]
+    values = [np.zeros((9, 9)), np.zeros((9, 9)), np.zeros((9, 9))]
+    index = -1
+    repeatSize = 10
     for size in [2, 8, 50]:
-        tf.reset_default_graph()
-        print("Training with {} number of hidden neurons".format(size))
-        with tf.variable_scope('Graph') as scope:
-            x = tf.placeholder("float", shape=[None, 2], name='inputs')
-            y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
-            # output of our model
-            y_pred = model(x, hidden_dim=size)
-            with tf.variable_scope('Loss'):
-                loss = tf.reduce_mean(tf.square(y_true - y_pred))
-            train_op = tf.train.GradientDescentOptimizer(learning_rate=0.05).minimize(loss)
-            predict_op = y_pred
+        index += 1
+        for repeat in range(repeatSize):
+            while True:
+                tf.reset_default_graph()
+                print("Training with {} number of hidden neurons".format(size))
+                with tf.variable_scope('Graph') as scope:
+                    x = tf.placeholder("float", shape=[None, 2], name='inputs')
+                    y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
+                    # output of our model
+                    y_pred = model(x, hidden_dim=size)
+                    with tf.variable_scope('Loss'):
+                        loss = tf.reduce_mean(tf.square(y_true - y_pred))
+                    train_op = tf.train.GradientDescentOptimizer(learning_rate=0.05).minimize(loss)
+                    predict_op = y_pred
 
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+                saver = tf.train.Saver()
+                with tf.Session() as sess:
+                    sess.run(tf.global_variables_initializer())
 
-            converged = False
-            epoch = "Didnt converge"
-            for i in range(90):
-                batch_size = 1
-                for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
-                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
-                    predicted = sess.run(predict_op, feed_dict={x: trX[start:end]})
-                if sess.run(loss, feed_dict={x: teX, y_true: teY}) < 0.02 and not converged:
-                    print("Converged at epoch", i, "with MSE of", sess.run(loss, feed_dict={x: teX, y_true: teY}))
-                    converged = True
-                    epoch = i + 1
+                    converged = False
+                    epoch = "Didnt converge"
+                    for i in range(2000):
+                        batch_size = 30
+                        for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
+                            sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
+                        if i % 500 == 0:
+                            print(sess.run(loss, feed_dict={x: trX, y_true: trY}))
+                        if sess.run(loss, feed_dict={x: trX, y_true: trY}) < 0.02 and not converged:
+                            print("Converged at epoch", i, "with MSE of", sess.run(loss, feed_dict={x: trX, y_true: trY}))
+                            converged = True
+                            epoch = i + 1
 
-            print("{} Neurons results in a {} MSE, after {} epochs".format(
-                size,
-                sess.run(loss, feed_dict={x: teX, y_true: teY}), i))
+                    print("Epoch", epoch == "Didnt converge")
+                    if epoch == "Didnt converge":
+                        continue
 
-            table.append([size, sess.run(loss, feed_dict={x: teX, y_true: teY}), epoch])
+                    print("{} Neurons results in a {} MSE, after {} epochs".format(
+                        size,
+                        sess.run(loss, feed_dict={x: teX, y_true: teY}), i))
 
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
+                    print("Before", table[index])
+                    table[index] = table[index] + np.array([size, sess.run(loss, feed_dict={x: teX, y_true: teY}), epoch])
+                    print("After", table[index])
 
-            com = np.vstack((x1.flatten(), y1.flatten())).T
-            predicted = sess.run(predict_op, feed_dict={x: com})
-            predicted = np.reshape(predicted, (-1, 100))
+                    com = np.vstack((x1.flatten(), y1.flatten())).T
+                    predicted = sess.run(predict_op, feed_dict={x: com})
+                    predicted = np.reshape(predicted, (-1, 9))
 
-            values.append([x1, y1, predicted])
-            cs = ax.contour(x1, y1, predicted, levels=cs1.levels)
-            plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs1.norm(cs1.levels)))
-            plt.colorbar(cs)
+                    values[index] = values[index] + predicted
+                    break
 
-    values.append((x1, y1, f(x1, y1)))
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        cs = ax.contour(x1, y1, values[index] / repeatSize, levels=cs1.levels)
+        plt.clabel(cs, fontsize=10, colors=plt.cm.Reds(cs1.norm(cs1.levels)))
+        plt.colorbar(cs)
+
+    values.append(f(x1, y1) * repeatSize)
     plt.show()
 
-    print("%s \t %s \t %s" % ("Size", "MSE", "epochs to convergence"))
+    print("%s \t %s" % ("Size", "average epochs to convergence"))
     for i in table:
-        print("%s \t %s \t %s" % (i[0], i[1], i[2]))
+        print("%s \t %s" % (i[0] / repeatSize, i[2] / repeatSize))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -181,7 +169,7 @@ if question == "a":
     c = ['g', 'r', 'b', 'k']
     legend = []
     for i in values:
-        a = ax.contour(i[0], i[1], i[2], levels=cs1.levels, colors=c[j])
+        a = ax.contour(x1, y1, i / repeatSize, levels=cs1.levels, colors=c[j])
         h, _ = a.legend_elements()
         legend.append(h)
         j = j + 1
@@ -190,72 +178,110 @@ if question == "a":
 
 
 elif question == "b":
-    table = []
-    mses = []
-    cpus = []
-    ac = []
-    acC = []
-    for train in [("traingd", tf.train.GradientDescentOptimizer(learning_rate=0.02)),
-                  ("traingdm", tf.train.MomentumOptimizer(learning_rate=0.02, momentum=0.02)),
-                  ("traingrms", tf.train.RMSPropOptimizer(learning_rate=0.02))]:
-        tf.reset_default_graph()
-        mse = []
-        cpu = []
-        print("Training with {} number of hidden neurons".format(8))
-        with tf.variable_scope('Graph') as scope:
-            x = tf.placeholder("float", shape=[None, 2], name='inputs')
-        y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
-        # output of our model
-        y_pred = model(x, hidden_dim=8)
-        with tf.variable_scope('Loss'):
-            loss = tf.reduce_mean(tf.square(y_true - y_pred))
-        train_op = train[1].minimize(loss)
-        predict_op = y_pred
+    table = [np.zeros(2), np.zeros(2), np.zeros(2)]
+    mses = [np.zeros((100, 2)), np.zeros((100, 2)), np.zeros((100, 2))]
+    cpus = [np.zeros((100, 2)), np.zeros((100, 2)), np.zeros((100, 2))]
+    ac = [np.zeros(3), np.zeros(3), np.zeros(3)]
+    acC = [np.zeros(3), np.zeros(3), np.zeros(3)]
+    index = -1
+    repeatSize = 10
+    traingingStyles = ["traingd", "traingdm", "traingrms"]
+    for train in [(0, tf.train.GradientDescentOptimizer(learning_rate=0.02)),
+                  (1, tf.train.MomentumOptimizer(learning_rate=0.02, momentum=0.02)),
+                  (2, tf.train.RMSPropOptimizer(learning_rate=0.02))]:
+        index += 1
+        for repeat in range(repeatSize):
+            while True:
+                tf.reset_default_graph()
+                mse = []
+                cpu = []
+                print("Training with {} number of hidden neurons".format(8))
+                with tf.variable_scope('Graph') as scope:
+                    x = tf.placeholder("float", shape=[None, 2], name='inputs')
+                y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
+                # output of our model
+                y_pred = model(x, hidden_dim=8)
+                with tf.variable_scope('Loss'):
+                    loss = tf.reduce_mean(tf.square(y_true - y_pred))
+                train_op = train[1].minimize(loss)
+                predict_op = y_pred
 
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+                saver = tf.train.Saver()
+                with tf.Session() as sess:
+                    sess.run(tf.global_variables_initializer())
 
-            converged = False
-            epoch = "Didnt converge"
-            for i in range(100):
-                batch_size = 1
-                start_time = time.process_time()
-                for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
-                    sess.run(train_op, feed_dict={x: trX[start:end], y_true: trY[start:end]})
+                    converged = False
+                    epoch = "Didnt converge"
+                    for i in range(100):
+                        batch_size = 1
+                        start_time = time.process_time()
+                        for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
+                            sess.run(train_op, feed_dict={x: trX[start:end], y_true: trY[start:end]})
 
-                end = time.process_time()
-                error = sess.run(loss, feed_dict={x: trX, y_true: trY})
-                mse.append([train[0], error])
-                cpu.append([train[0], end - start_time])
+                        end = time.process_time()
+                        error = sess.run(loss, feed_dict={x: trX, y_true: trY})
+                        mse.append([train[0], error])
+                        cpu.append([train[0], end - start_time])
 
-                if error < 0.02 and not converged:
-                    print("Converged at epoch", i)
-                    converged = True
-                    epoch = i + 1
-                    acC.append((train[0], error, sess.run(loss, feed_dict={x: teX, y_true: teY})))
+                        if error < 0.02 and not converged:
+                            print("Converged at epoch", i)
+                            converged = True
+                            epoch = i + 1
+                            acC[index] += np.array([train[0], error, sess.run(loss, feed_dict={x: teX, y_true: teY})])
 
-            cpus.append(cpu)
-            mses.append(mse)
-            table.append((train[0], epoch))
-            print("Training method {} resulted in a {} MSE, number of epochs: {}".format(
-                train_op,
-                sess.run(loss, feed_dict={x: trX, y_true: trY}), i))
-            ac.append((train[0], sess.run(loss, feed_dict={x: trX, y_true: trY}),
-                       sess.run(loss, feed_dict={x: teX, y_true: teY})))
+                    print("Epoch", epoch == "Didnt converge")
+                    if epoch == "Didnt converge":
+                        continue
+
+                    cpus[index] += cpu
+                    mses[index] += mse
+                    table[index] = table[index] + np.array([train[0], epoch])
+                    print("Training method {} resulted in a {} MSE, number of epochs: {}".format(
+                        train_op,
+                        sess.run(loss, feed_dict={x: trX, y_true: trY}), i))
+                    ac[index] += np.array([train[0], sess.run(loss, feed_dict={x: trX, y_true: trY}),
+                               sess.run(loss, feed_dict={x: teX, y_true: teY})])
+                    break
 
     print("%s \t %s" % ("Training Style", "epochs to convergence"))
-    for i in table:
-        print("%s \t %s" % (i[0], i[1]))
+    print("%s \t %s" % ("traingd", table[0][1] / repeatSize))
+    print("%s \t %s" % ("traingdm", table[1][1] / repeatSize))
+    print("%s \t %s" % ("traingrms", table[2][1] / repeatSize))
+
+
+    def show_graph(results, xaxis, yaxis):
+        for result in results:
+            y = [i[1] / repeatSize for i in result]
+            x = [j + 1 for j in range(len(result))]
+            plt.plot(x, y, label=traingingStyles[(result[0][0] / repeatSize).astype(int) ], linestyle='--', marker='o')
+        plt.xlabel(xaxis)
+        plt.ylabel(yaxis)
+        plt.legend()
+        plt.show()
+
+
+    def show_graph_bar(results, xaxis, yaxis):
+        x = np.array([j + 1 for j in range(len(results[0]))])
+        y = [i[1] / repeatSize for i in results[0]]
+        y1 = [i[1] / repeatSize for i in results[1]]
+        y2 = [i[1] / repeatSize for i in results[2]]
+        ax = plt.subplot(111)
+        ax.bar(x - 0.3, y, width=0.3, color='b', align='center', label="traingd")
+        ax.bar(x, y1, width=0.3, color='r', align='center', label="traingdm")
+        ax.bar(x + 0.3, y2, width=0.3, color='g', align='center', label="traingrms")
+        plt.xlabel(xaxis)
+        plt.ylabel(yaxis)
+        plt.legend()
+        plt.show()
 
     show_graph(mses, "Epoch", "MSE")
     show_graph_bar(cpus, "Epoch", "CPU Time per epoch (s)")
 
     print("The training method with the best accuracy wrt to testing data at the end of the 100 epochs is",
-          sorted(ac, key=lambda q: q[2])[0][0], "with an mse of", sorted(ac, key=lambda q: q[2])[0][1])
+          traingingStyles[(sorted(ac, key=lambda q: q[2])[0][0] / repeatSize).astype(int)], "with an mse of", sorted(ac, key=lambda q: q[2])[0][2] / repeatSize)
 
     print("The training method with the best accuracy wrt to testing data when training error is reached is",
-          sorted(acC, key=lambda q: q[2])[0][0], "with an mse of", sorted(ac, key=lambda q: q[2])[0][1])
+          traingingStyles[(sorted(acC, key=lambda q: q[2])[0][0] / repeatSize).astype(int)], "with an mse of", sorted(acC, key=lambda q: q[2])[0][2] / repeatSize)
 
 if question == "c":
     u = np.linspace(-1, 1, 100)
