@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import time
 
-question = "a"
+question = "c"
 
 if len(sys.argv) == 2:
     if sys.argv[1] == "a":
@@ -26,7 +26,7 @@ def model(x, hidden_dim=8):
     elif question == "b":
         stdev = 0.01
     else:
-        stdev = 0.75
+        stdev = 0.8
 
     with tf.variable_scope('FunctionApproximator'):
         w_h1 = tf.get_variable('w_h1', shape=[input_dim, hidden_dim],
@@ -268,40 +268,49 @@ if question == "c":
 
     trainings = [[], [], []]
 
-    mses = []
+   
+    layerSize = [7,8,10,15,25,50]
+    mses = [0 for i in range(len(layerSize))]
+    idx = 0
+    numExperiments = 5
+    for size in layerSize:
+        #take the average RMSE over 5 experiments for each hidden layer size
+        
+        for i in range(numExperiments):
+            tf.reset_default_graph()
+            with tf.variable_scope('Graph') as scope:
+                x = tf.placeholder("float", shape=[None, 2], name='inputs')
+                y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
+                # output of our model
+                y_pred = model(x, hidden_dim=size)
+                with tf.variable_scope('Loss'):
+                    loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
+                train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
+                predict_op = y_pred
+            saver = tf.train.Saver()
 
-    for size in [8, 10, 15, 20, 30, 40, 50]:
-        tf.reset_default_graph()
-        with tf.variable_scope('Graph') as scope:
-            x = tf.placeholder("float", shape=[None, 2], name='inputs')
-            y_true = tf.placeholder("float", shape=[None, 1], name='y_true')
-            # output of our model
-            y_pred = model(x, hidden_dim=size)
-            with tf.variable_scope('Loss'):
-                loss = tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
-            train_op = tf.train.RMSPropOptimizer(learning_rate=0.005, centered=True, momentum=0.1).minimize(loss)
-            predict_op = y_pred
-        saver = tf.train.Saver()
+            i = 0
+            batch_size = 20
+            with tf.Session() as sess:
+                sess.run(tf.global_variables_initializer())
 
-        i = 0
-        batch_size = 20
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+                while True:
+                    i += 1
+                    for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
+                        curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
+                    rmse = sess.run(loss, feed_dict={x: teX, y_true: teY})
+                    if rmse < 0.02 :
+                        print("MSE at convergence", rmse**2)
+                        mses[idx] += rmse
+                        break
+                    if i % 1000 == 0:
+                        print("Epoch", i, "RMSE", rmse, "with size of", size)
+        mses[idx] = mses[idx]/numExperiments
+        idx += 1
 
-            while True:
-                i += 1
-                for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trY) + 1, batch_size)):
-                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
-                rmse = sess.run(loss, feed_dict={x: teX, y_true: teY})
-                if rmse < 0.02:
-                    print("MSE at convergence", rmse**2)
-                    mses.append([size, rmse])
-                    break
-                if i % 1000 == 0:
-                    print("Epoch", i, "RMSE", rmse, "with size of", size)
-
-    x = [mses[j][0] for j in range(len(mses))]
-    y = [mses[j][1]**2 for j in range(len(mses))]
+    # x = [mses[j][0] for j in range(len(mses))]
+    x = layerSize
+    y = [mses[j]**2 for j in range(len(mses))]
 
     plt.plot(x,
              y,
