@@ -171,9 +171,9 @@ if question == "a":
     values.append((x1, y1, f(x1, y1)))
     plt.show()
 
-    print("%s \t %s" % ("Size", "epochs to convergence"))
+    print("%s \t %s \t %s" % ("Size", "MSE", "epochs to convergence"))
     for i in table:
-        print("%s \t %s" % (i[0], i[2]))
+        print("%s \t %s \t %s" % (i[0], i[1], i[2]))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
