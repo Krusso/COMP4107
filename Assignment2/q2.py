@@ -78,48 +78,54 @@ data, labels = get_random_data(trainingX, trainingY, batchSize)
 print(len(trainingX))
 #For question 2a
 recog_error = [] #list of errors for
+numExperiments = 5
 for size in [5, 10, 15, 20, 25]:
-    recog_error.append([])
-    tf.reset_default_graph()
-    print("Training with {} number of hidden neurons".format(size))
-    with tf.variable_scope('Graph') as scope:
-        x = tf.placeholder("float", shape=[None, 35], name='inputs')
-        y_true = tf.placeholder("float", shape=[None, 31], name='y_true')
-        y_true_cls = tf.argmax(y_true, 1)
-        # output of our model
-        y_pred = model(x, hidden_dim=size)
-        with tf.variable_scope('Loss'):
-            cost = tf.nn.softmax_cross_entropy_with_logits(logits=y_pred, labels=y_true)
-            loss = tf.reduce_mean(cost)  # compute costs
-        train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
-        predict_op = tf.argmax(y_pred, 1)
-        correct_prediction = tf.equal(predict_op, y_true_cls)
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        error_rate = 1 - accuracy
+    #we are gonna find the average of 5 runs for each layer size to
+    #have a better representation
+    recog_error.append([0,0,0,0])
+    for i in range(numExperiments):
+        tf.reset_default_graph()
+        print("Training with {} number of hidden neurons".format(size))
+        with tf.variable_scope('Graph') as scope:
+            x = tf.placeholder("float", shape=[None, 35], name='inputs')
+            y_true = tf.placeholder("float", shape=[None, 31], name='y_true')
+            y_true_cls = tf.argmax(y_true, 1)
+            # output of our model
+            y_pred = model(x, hidden_dim=size)
+            with tf.variable_scope('Loss'):
+                cost = tf.nn.softmax_cross_entropy_with_logits(logits=y_pred, labels=y_true)
+                loss = tf.reduce_mean(cost)  # compute costs
+            train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
+            predict_op = tf.argmax(y_pred, 1)
+            correct_prediction = tf.equal(predict_op, y_true_cls)
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+            error_rate = 1 - accuracy
+        with tf.Session() as sess:
+                sess.run(tf.global_variables_initializer())
+                ######################################################
+                # epochs = [i for i in range(300)]
+                error_rate_list = []
+                for i in range(300):
+                    for j in range(0, len(data)):
+                        curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
 
-    with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            ######################################################
-            epochs = [i for i in range(500)]
-            error_rate_list = []
-            for i in range(500):
-                for j in range(0, len(data)):
-                    curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
-
-                er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
-                error_rate_list.append(er)
-            idx = int(size/5-1)
-            recog_error[idx].append(100*sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]}))
-            recog_error[idx].append(100*sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[0]}))
-            recog_error[idx].append(100*sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[0]}))
-            recog_error[idx].append(100*sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[0]}))
+                    er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
+                    error_rate_list.append(er)
+                idx = int(size/5-1)
+                recog_error[idx][0] += (100*sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]}))
+                recog_error[idx][1] += (100*sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[0]}))
+                recog_error[idx][2] += (100*sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[0]}))
+                recog_error[idx][3] += (100*sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[0]})) 
+#calculate the average
+recog_error_avg = [[errSum/numExperiments  for errSum in errors] for errors in recog_error]
+print(recog_error_avg)
 ###Plot 2a for hidden neurons 5-25
 fig, ax = plt.subplots()
-ax.plot([i for i in range(4)], recog_error[0], color='r', label='5 Hidden Neurons')
-ax.plot([i for i in range(4)], recog_error[1], color='b', label='10 Hidden Neurons')
-ax.plot([i for i in range(4)], recog_error[2], color='g', label='15 Hidden Neurons')
-ax.plot([i for i in range(4)], recog_error[3], color='y', label='20 Hidden Neurons')
-ax.plot([i for i in range(4)], recog_error[4], color='k', label='25 Hidden Neurons')
+ax.plot([i for i in range(4)], recog_error_avg[0], color='r', label='5 Hidden Neurons')
+ax.plot([i for i in range(4)], recog_error_avg[1], color='b', label='10 Hidden Neurons')
+ax.plot([i for i in range(4)], recog_error_avg[2], color='g', label='15 Hidden Neurons')
+ax.plot([i for i in range(4)], recog_error_avg[3], color='y', label='20 Hidden Neurons')
+ax.plot([i for i in range(4)], recog_error_avg[4], color='k', label='25 Hidden Neurons')
 legend = ax.legend(loc='upper center', shadow=True)
 plt.ylabel('Percentage of Recognition Errors')
 plt.xlabel('Noise Level')
@@ -128,7 +134,7 @@ plt.show()
 
 #For question 2b and c
 print('Question 2b and c')
-for size in [15]:
+for size in [25]:
     tf.reset_default_graph()
     print("Training with {} number of hidden neurons".format(size))
     with tf.variable_scope('Graph') as scope:
@@ -152,9 +158,8 @@ for size in [15]:
             sess.run(tf.global_variables_initializer())
 
             #this data will be used for testing and graphing part C
-            partC_error_rate_noiseless = []
-            partC_error_rate_withNoise = []
-            trXc, trYc = randomizeTestingPoints() 
+            partC_error_rate_noiseless = [0,0,0,0]
+            partC_error_rate_withNoise = [0,0,0,0]
             ######################################################
             
             epochs = [i for i in range(500)]
@@ -167,10 +172,13 @@ for size in [15]:
                 error_rate_list.append(er)
                 
                 # print(er)
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[0], y_true:trY[0]}))
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[1], y_true:trY[0]}))
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[2], y_true:trY[0]}))
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[3], y_true:trY[0]}))
+            #try 5 different testing points
+            for i in range(5):
+                trXc, trYc = randomizeTestingPoints() 
+                partC_error_rate_noiseless[0] += (100*sess.run(error_rate, feed_dict={x: trXc[0], y_true:trY[0]}))
+                partC_error_rate_noiseless[1] += (100*sess.run(error_rate, feed_dict={x: trXc[1], y_true:trY[0]}))
+                partC_error_rate_noiseless[2] += (100*sess.run(error_rate, feed_dict={x: trXc[2], y_true:trY[0]}))
+                partC_error_rate_noiseless[3] += (100*sess.run(error_rate, feed_dict={x: trXc[3], y_true:trY[0]}))
 
             plt.plot(epochs,error_rate_list)
             plt.ylabel('Training Error')
@@ -217,7 +225,7 @@ for size in [15]:
                 er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
                 print(er)
                 error_rate_list.append(er)
-                if er < 0.01:
+                if er < 0.02:
                     break
                 
 
@@ -234,11 +242,13 @@ for size in [15]:
 
             #part c: create testing points
             fig, ax = plt.subplots()
-            randomizeTestingPoints()
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})) 
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[1]})) 
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[2]})) 
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[3]})) 
+            #try 5 different testing points 
+            for i in range(5):
+                randomizeTestingPoints()
+                partC_error_rate_withNoise[0] += (100*sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})) 
+                partC_error_rate_withNoise[1] += (100*sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[1]})) 
+                partC_error_rate_withNoise[2] += (100*sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[2]})) 
+                partC_error_rate_withNoise[3] += (100*sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[3]})) 
             ax.plot([i for i in range(4)], partC_error_rate_withNoise, color='r', label='trained with noise')
             ax.plot([i for i in range(4)], partC_error_rate_noiseless, color='b', label='trained without noise')
             legend = ax.legend(loc='upper center', shadow=True)
