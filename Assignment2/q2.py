@@ -103,9 +103,9 @@ for size in [5, 10, 15, 20, 25]:
         with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
                 ######################################################
-                epochs = [i for i in range(500)]
+                # epochs = [i for i in range(300)]
                 error_rate_list = []
-                for i in range(500):
+                for i in range(300):
                     for j in range(0, len(data)):
                         curr_loss, _ = sess.run([loss, train_op], feed_dict={x: data[j], y_true: labels[j]})
 
@@ -158,9 +158,8 @@ for size in [25]:
             sess.run(tf.global_variables_initializer())
 
             #this data will be used for testing and graphing part C
-            partC_error_rate_noiseless = []
-            partC_error_rate_withNoise = []
-            trXc, trYc = randomizeTestingPoints() 
+            partC_error_rate_noiseless = [0,0,0,0]
+            partC_error_rate_withNoise = [0,0,0,0]
             ######################################################
             
             epochs = [i for i in range(500)]
@@ -173,10 +172,13 @@ for size in [25]:
                 error_rate_list.append(er)
                 
                 # print(er)
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[0], y_true:trY[0]}))
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[1], y_true:trY[0]}))
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[2], y_true:trY[0]}))
-            partC_error_rate_noiseless.append(100*sess.run(error_rate, feed_dict={x: trXc[3], y_true:trY[0]}))
+            #try 5 different testing points
+            for i in range(5):
+                trXc, trYc = randomizeTestingPoints() 
+                partC_error_rate_noiseless[0] += (100*sess.run(error_rate, feed_dict={x: trXc[0], y_true:trY[0]}))
+                partC_error_rate_noiseless[1] += (100*sess.run(error_rate, feed_dict={x: trXc[1], y_true:trY[0]}))
+                partC_error_rate_noiseless[2] += (100*sess.run(error_rate, feed_dict={x: trXc[2], y_true:trY[0]}))
+                partC_error_rate_noiseless[3] += (100*sess.run(error_rate, feed_dict={x: trXc[3], y_true:trY[0]}))
 
             plt.plot(epochs,error_rate_list)
             plt.ylabel('Training Error')
@@ -223,7 +225,7 @@ for size in [25]:
                 er = sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})
                 print(er)
                 error_rate_list.append(er)
-                if er < 0.01:
+                if er < 0.02:
                     break
                 
 
@@ -240,11 +242,13 @@ for size in [25]:
 
             #part c: create testing points
             fig, ax = plt.subplots()
-            randomizeTestingPoints()
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})) 
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[1]})) 
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[2]})) 
-            partC_error_rate_withNoise.append(100*sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[3]})) 
+            #try 5 different testing points 
+            for i in range(5):
+                randomizeTestingPoints()
+                partC_error_rate_withNoise[0] += (100*sess.run(error_rate, feed_dict={x: trX[0], y_true:trY[0]})) 
+                partC_error_rate_withNoise[1] += (100*sess.run(error_rate, feed_dict={x: trX[1], y_true:trY[1]})) 
+                partC_error_rate_withNoise[2] += (100*sess.run(error_rate, feed_dict={x: trX[2], y_true:trY[2]})) 
+                partC_error_rate_withNoise[3] += (100*sess.run(error_rate, feed_dict={x: trX[3], y_true:trY[3]})) 
             ax.plot([i for i in range(4)], partC_error_rate_withNoise, color='r', label='trained with noise')
             ax.plot([i for i in range(4)], partC_error_rate_noiseless, color='b', label='trained without noise')
             legend = ax.legend(loc='upper center', shadow=True)

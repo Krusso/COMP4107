@@ -171,9 +171,9 @@ if question == "a":
     values.append((x1, y1, f(x1, y1)))
     plt.show()
 
-    print("%s \t %s" % ("Size", "epochs to convergence"))
+    print("%s \t %s \t %s" % ("Size", "MSE", "epochs to convergence"))
     for i in table:
-        print("%s \t %s" % (i[0], i[2]))
+        print("%s \t %s \t %s" % (i[0], i[1], i[2]))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -268,6 +268,8 @@ if question == "c":
 
     trainings = [[], [], []]
 
+    mses = []
+
     for size in [8, 10, 15, 20, 30, 40, 50]:
         tf.reset_default_graph()
         with tf.variable_scope('Graph') as scope:
@@ -292,12 +294,23 @@ if question == "c":
                     curr_loss, _ = sess.run([loss, train_op], feed_dict={x: trX[start:end], y_true: trY[start:end]})
                 rmse = sess.run(loss, feed_dict={x: teX, y_true: teY})
                 if rmse < 0.02:
-                    print("Accuracy at convergence", rmse)
+                    print("MSE at convergence", rmse**2)
+                    mses.append([size, rmse])
                     break
                 if i % 1000 == 0:
-                    print("Epoch", i, rmse, "with size of", size)
+                    print("Epoch", i, "RMSE", rmse, "with size of", size)
 
-    # find network with convergence
+    x = [mses[j][0] for j in range(len(mses))]
+    y = [mses[j][1]**2 for j in range(len(mses))]
+
+    plt.plot(x,
+             y,
+             label="goal")
+
+    plt.xlabel("Hidden Layer Size")
+    plt.ylabel("MSE at convergence")
+    plt.show()
+
     converged = False
     early_stopped = False
     while True:
@@ -349,8 +362,8 @@ if question == "c":
                     break
 
                 if i % 100 == 0:
-                    print("Epoch", i, failures, sess.run(loss, feed_dict={x: teX, y_true: teY}))
-                    print("Epoch", i, failures, sess.run(loss, feed_dict={x: trX, y_true: trY}))
+                    print("Epoch", i, "Failures", failures, "RMSE", sess.run(loss, feed_dict={x: teX, y_true: teY}))
+                    print("Epoch", i, "Failures", failures, "RMSE", sess.run(loss, feed_dict={x: trX, y_true: trY}))
 
                 if not converged and rmse < 0.0208:
                     trainings[0] = trainings[1]
