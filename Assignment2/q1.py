@@ -398,7 +398,7 @@ if question == "c":
                         print("Epoch", i, "Failures", failures, "RMSE testing", sess.run(loss, feed_dict={x: teX, y_true: teY}))
                         print("Epoch", i, "Failures", failures, "RMSE training", sess.run(loss, feed_dict={x: trX, y_true: trY}))
 
-                    if not converged and rmse < 0.0208:
+                    if not converged and rmse < 0.2:
                         trainings[0] = trainings[1]
                         trainings[1] = [
                             0.02 ** 2,
