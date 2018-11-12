@@ -1,69 +1,69 @@
 import argparse
-import tensorflow as tf 
 import sys
-from sklearn import datasets
+import sklearn.cluster as sk
 import numpy as np
+from tensorflow.examples.tutorials.mnist import input_data
 
-class MnistDataset:
+
+class mnistDataset:
     def __init__(self):
-        digits = datasets.load_digits()
-        self.data = digits.data #shape(1797, 64)
-        self.label = digits.target #shape(1797,)
-        self.size = len(self.data)
-    
-    def subsample(self, *numbers):
-        """
-            input: list of numbers that we want to subsample
-            returns: a tuple of (data, label) where the data/label only contains the specified numbers as labels
-        """
-        num = np.asarray(numbers)
-        subsample_data = []
-        subsample_label = []
-        for i in range(self.size):
-            if self.label[i] in num:
-                subsample_data.append(self.data[i])
-                subsample_label.append(self.label[i])
-        return subsample_data, subsample_label
+        mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+        trX1, trY1, teX1, teY1 = mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
 
-def RBF(input):
-    #Todo
-    print("Todo: make RBF")
-    
-    return None
+        self.trX = []
+        self.trY = []
+        for i in range(len(trX1)):
+            if np.array_equal(trY1[i], [0, 1, 0, 0, 0, 0, 0, 0, 0, 0]) or \
+                    np.array_equal(trY1[i], [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]):
 
-#Main method:
-def main(unused_argv):
+                self.trX.append(trX1[i])
+                self.trY.append(trY1[i])
 
-    mnist = MnistDataset()
-    ss_data, ss_label = mnist.subsample(1,5)
+    def kmean(self):
+        kmeans = sk.KMeans(n_clusters=2).fit(self.trX)
 
-    x = tf.placeholder("float", shape=[None, 64], name='inputs')
-    y_true = tf.placeholder("float", shape=[None, 10], name='label')
+        print(kmeans.inertia_)
 
-    y_pred = hopfield(x)
+        kmeansDistance = kmeans.transform(self.trX)
 
-    with tf.variable_scope('Cost'):
-        #Todo
-        print('todo: write the cost/loss function here')
+        variance = 0
+        i = 0
+        for label in kmeans.labels_:
+            variance = variance + kmeansDistance[i][label]
+            i = i + 1
 
-    print("todo: write the optimizer_op, correct_predition, accuracy, error_rate ")
-    #Todo
+        print(variance)
 
-    saver = tf.train.Saver()
+        means = kmeans.cluster_centers_
+        s = 0
+        for x in self.trX:
+            best = float("inf")
+            for y in means:
+                d = (x - y).T.dot(x - y)
+                if d < best:
+                    best = d
+            s += best
+        print(s, "*****")
 
 
-    #Now we train the network here:
+data = mnistDataset()
+data.kmean()
 
 
+print("\n")
+kmeans = sk.KMeans(n_clusters=1).fit([[0, 0], [1, 1]])
+kmeansDistance = kmeans.transform([[0, 0], [1, 1]])
 
+np.set_printoptions(threshold=np.nan)
+print(kmeans.cluster_centers_)
+print(kmeans.inertia_)
+print(kmeans.score([[0, 0], [1, 1]]))
+print(type(kmeans.inertia_))
 
+variance = 0
+i = 0
+for label in kmeans.labels_:
+    variance = variance + kmeansDistance[i][label]
+    i = i + 1
 
-#We run main method here:
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    #Add arguments here if you'd like
-
-    FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-    
+print(variance)
