@@ -3,6 +3,7 @@ import sys
 import sklearn.cluster as sk
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
+import tensorflow as tf
 
 
 class mnistDataset:
@@ -20,50 +21,39 @@ class mnistDataset:
                 self.trY.append(trY1[i])
 
     def kmean(self):
-        kmeans = sk.KMeans(n_clusters=2).fit(self.trX)
+        with tf.Session() as sess:
+            summary_writer = tf.summary.FileWriter('logs/', graph=sess.graph)
 
-        print(kmeans.inertia_)
+            for k in range(2, 100, 1):
+                kmeans = sk.KMeans(n_clusters=k).fit(self.trX)
 
-        kmeansDistance = kmeans.transform(self.trX)
-
-        variance = 0
-        i = 0
-        for label in kmeans.labels_:
-            variance = variance + kmeansDistance[i][label]
-            i = i + 1
-
-        print(variance)
-
-        means = kmeans.cluster_centers_
-        s = 0
-        for x in self.trX:
-            best = float("inf")
-            for y in means:
-                d = (x - y).T.dot(x - y)
-                if d < best:
-                    best = d
-            s += best
-        print(s, "*****")
+                print(kmeans.inertia_)
+                summary_writer.add_summary(tf.Summary(value=[
+                    tf.Summary.Value(tag="objective function", simple_value=kmeans.inertia_),
+                ]), k)
 
 
 data = mnistDataset()
 data.kmean()
 
-
-print("\n")
-kmeans = sk.KMeans(n_clusters=1).fit([[0, 0], [1, 1]])
-kmeansDistance = kmeans.transform([[0, 0], [1, 1]])
-
-np.set_printoptions(threshold=np.nan)
-print(kmeans.cluster_centers_)
-print(kmeans.inertia_)
-print(kmeans.score([[0, 0], [1, 1]]))
-print(type(kmeans.inertia_))
-
-variance = 0
-i = 0
-for label in kmeans.labels_:
-    variance = variance + kmeansDistance[i][label]
-    i = i + 1
-
-print(variance)
+# keep for now :)
+# kmeansDistance = kmeans.transform(self.trX)
+#
+# variance = 0
+# i = 0
+# for label in kmeans.labels_:
+#     variance = variance + kmeansDistance[i][label]
+#     i = i + 1
+#
+# print(variance)
+#
+# means = kmeans.cluster_centers_
+# s = 0
+# for x in self.trX:
+#     best = float("inf")
+#     for y in means:
+#         d = np.linalg.norm(x - y)
+#         if d < best:
+#             best = d
+#     s += best
+# print(s, "*****")
