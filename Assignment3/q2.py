@@ -11,7 +11,7 @@ def init_weights(shape):
 
 input_size = 784
 output_size = 10
-centroids = 100
+centroids = 40
 X = tf.placeholder("float", shape=[None, input_size])
 Y = tf.placeholder("float", shape=[None, output_size])
 
@@ -58,10 +58,10 @@ class mnistDataset:
         #    image_vector = teX1[i]
         #    teX1[i] = [j / 255.0 for j in image_vector]
 
-        self.trX = trX1[5000:]
-        self.trY = trY1[5000:]
-        self.teX = teX1[5000:]
-        self.teY = teY1[5000:]
+        self.trX = trX1
+        self.trY = trY1
+        self.teX = teX1
+        self.teY = teY1
 
         self.trX, self.trY = shuffle(self.trX, self.trY)
         self.teX, self.teY = shuffle(self.teX, self.teY)
@@ -93,6 +93,7 @@ class mnistDataset:
             cluster_centers = self.getCentroids()
 
         sigma = np.zeros([len(cluster_centers)], dtype=np.float32)
+        size = np.zeros([len(cluster_centers)], dtype=np.float32)
 
         means = cluster_centers
         for x in self.trX:
@@ -104,7 +105,11 @@ class mnistDataset:
                     best = d
                     index = y
             sigma[index] += best
+            size[index] += 1
 
+        sigma = np.array([sigma[j] / size[j] for j in range(len(sigma))])
+
+        print(sigma)
         return tf.divide(1, tf.multiply(2., tf.square(sigma)))
 
 
@@ -123,10 +128,11 @@ def printAccuracy(data, labels, size, sess):
 
 
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
-train_op = tf.train.GradientDescentOptimizer(learning_rate=0.05).minimize(cost)
+train_op = tf.train.AdamOptimizer().minimize(cost)
 predict_op = tf.argmax(py_x, 1)
 
-batchSize = 1
+batchSize = 50
+testSize = 100
 with tf.Session() as sess:
     summary_writer = tf.summary.FileWriter('logs/', graph=sess.graph)
     tf.global_variables_initializer().run()
@@ -139,21 +145,21 @@ with tf.Session() as sess:
     # print("accuracy % before running testing", accuracy / int((len(rbf.teY) / batchSize)))
     for i in range(20):
         weightsBefore = sess.run(w_h1)
-        cost = 0
+        cost2 = 0
         for start, end in zip(range(0, len(rbf.trX), batchSize), range(batchSize, len(rbf.trX)+1, batchSize)):
             sess.run(train_op, feed_dict={X: rbf.trX[start:end], Y: rbf.trY[start:end]})
             cost1 = sess.run(cost, feed_dict={X: rbf.trX[start:end], Y: rbf.trY[start:end]})
-            print("Cost", cost1)
-            cost += cost1
+            #print("Cost", cost1)
+            cost2 += cost1
 
-        print("cost is", cost)
-        accuracy = printAccuracy(rbf.trX, rbf.trY, 100, sess)
+        print("cost is", cost2)
+        accuracy = printAccuracy(rbf.trX, rbf.trY, testSize, sess)
         print("accuracy # after", accuracy)
-        print("accuracy % after", i, accuracy / int((len(rbf.trY) / batchSize)))
+        print("accuracy % after", i, accuracy / int((len(rbf.trY) / testSize)))
 
-        accuracy = printAccuracy(rbf.teX, rbf.teY, 100, sess)
+        accuracy = printAccuracy(rbf.teX, rbf.teY, testSize, sess)
         print("accuracy # after testing", accuracy)
-        print("accuracy % after testing", i, accuracy / int((len(rbf.teY) / batchSize)))
+        print("accuracy % after testing", i, accuracy / int((len(rbf.teY) / testSize)))
 
         weightsAfter = sess.run(w_h1)
         print("Difference in weights", np.sum(weightsBefore - weightsAfter))
