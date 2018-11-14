@@ -18,31 +18,31 @@ Y = tf.placeholder("float", shape=[None, output_size])
 w_h1 = init_weights([centroids, output_size])
 
 def model(X, w, centroid, b):
-    with tf.Session() as sess:
-        tf.global_variables_initializer().run()
-        b = tf.transpose(b)
-        #print("stack", sess.run(tf.tile(tf.expand_dims(X, 1), [1, 2, 1]), feed_dict={X: [[0, 0], [1, 1]]}))
-        #print("centroid", sess.run(tf.reshape(tf.tile(centroid, [2, 1]), [2, 2, 2]), feed_dict={X: [[0, 0], [1, 1]]}))
+    #with tf.Session() as sess:
+    #tf.global_variables_initializer().run()
+    b = tf.transpose(b)
+    #print("stack", sess.run(tf.tile(tf.expand_dims(X, 1), [1, 2, 1]), feed_dict={X: [[0, 0], [1, 1]]}))
+    #print("centroid", sess.run(tf.reshape(tf.tile(centroid, [2, 1]), [2, 2, 2]), feed_dict={X: [[0, 0], [1, 1]]}))
 
-        x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, centroids, 1]))
-        centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
-                                                                                    centroids,
-                                                                                    input_size]))
+    x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, centroids, 1]))
+    centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
+                                                                                centroids,
+                                                                                input_size]))
 
-        #print("subtract", sess.run(tf.subtract(x1, centroid1), feed_dict={X: [[0, 0], [1, 1]]}))
-        #print("subtract", sess.run(tf.norm(tf.subtract(x1, centroid1), axis=-1), feed_dict={X: [[0, 0], [1, 1]]}))
-        dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
-        #print("weights inside", sess.run(w))
-        #print("dist", sess.run(dist, feed_dict={X: [[0, 0], [1, 1]]}))
-        #print("b", b)
-        negative = tf.to_float(tf.negative(b))
-        #print("negative", sess.run(negative, feed_dict={X: [[0, 0], [1, 1]]}))
-        beta = tf.multiply(negative, dist)
-        #print("beta", sess.run(beta, feed_dict={X: [[0, 0], [1, 1]]}))
-        exponent = tf.exp(beta)
-        #print("w", sess.run(w, feed_dict={X: [[0, 0], [1, 1]]}))
-        #print("exponent", sess.run(exponent, feed_dict={X: [[0, 0], [1, 1]]}))
-        return tf.matmul(exponent, w)
+    #print("subtract", sess.run(tf.subtract(x1, centroid1), feed_dict={X: [[0, 0], [1, 1]]}))
+    #print("subtract", sess.run(tf.norm(tf.subtract(x1, centroid1), axis=-1), feed_dict={X: [[0, 0], [1, 1]]}))
+    dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
+    #print("weights inside", sess.run(w))
+    #print("dist", sess.run(dist, feed_dict={X: [[0, 0], [1, 1]]}))
+    #print("b", b)
+    negative = tf.to_float(tf.negative(b))
+    #print("negative", sess.run(negative, feed_dict={X: [[0, 0], [1, 1]]}))
+    beta = tf.multiply(negative, dist)
+    #print("beta", sess.run(beta, feed_dict={X: [[0, 0], [1, 1]]}))
+    exponent = tf.exp(beta)
+    #print("w", sess.run(w, feed_dict={X: [[0, 0], [1, 1]]}))
+    #print("exponent", sess.run(exponent, feed_dict={X: [[0, 0], [1, 1]]}))
+    return tf.matmul(exponent, w)
 
 
 class mnistDataset:
@@ -50,18 +50,18 @@ class mnistDataset:
         mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
         trX1, trY1, teX1, teY1 = mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
 
-        for i in range(0, len(trX1)):
-            image_vector = trX1[i]
-            trX1[i] = [j / 255.0 for j in image_vector]
+        #for i in range(0, len(trX1)):
+        #    image_vector = trX1[i]
+        #    trX1[i] = [j / 255.0 for j in image_vector]
 
-        for i in range(0, len(teX1)):
-            image_vector = teX1[i]
-            teX1[i] = [j / 255.0 for j in image_vector]
+        #for i in range(0, len(teX1)):
+        #    image_vector = teX1[i]
+        #    teX1[i] = [j / 255.0 for j in image_vector]
 
-        self.trX = trX1
-        self.trY = trY1
-        self.teX = teX1
-        self.teY = teY1
+        self.trX = trX1[5000:]
+        self.trY = trY1[5000:]
+        self.teX = teX1[5000:]
+        self.teY = teY1[5000:]
 
         self.trX, self.trY = shuffle(self.trX, self.trY)
         self.teX, self.teY = shuffle(self.teX, self.teY)
@@ -123,19 +123,30 @@ def printAccuracy(data, labels, size, sess):
 
 
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
-train_op = tf.train.AdamOptimizer().minimize(cost)
+train_op = tf.train.GradientDescentOptimizer(learning_rate=0.05).minimize(cost)
 predict_op = tf.argmax(py_x, 1)
 
-batchSize = 128
+batchSize = 1
 with tf.Session() as sess:
     summary_writer = tf.summary.FileWriter('logs/', graph=sess.graph)
     tf.global_variables_initializer().run()
-    summary_writer.add_graph(py_x)
+    accuracy = printAccuracy(rbf.trX, rbf.trY, 100, sess)
+    print("accuracy # before running", accuracy)
+    print("accuracy % before running", accuracy / int((len(rbf.trY) / batchSize)))
+
+    accuracy = printAccuracy(rbf.teX, rbf.teY, 100, sess)
+    print("accuracy # before running testing", accuracy)
+    # print("accuracy % before running testing", accuracy / int((len(rbf.teY) / batchSize)))
     for i in range(20):
         weightsBefore = sess.run(w_h1)
+        cost = 0
         for start, end in zip(range(0, len(rbf.trX), batchSize), range(batchSize, len(rbf.trX)+1, batchSize)):
             sess.run(train_op, feed_dict={X: rbf.trX[start:end], Y: rbf.trY[start:end]})
+            cost1 = sess.run(cost, feed_dict={X: rbf.trX[start:end], Y: rbf.trY[start:end]})
+            print("Cost", cost1)
+            cost += cost1
 
+        print("cost is", cost)
         accuracy = printAccuracy(rbf.trX, rbf.trY, 100, sess)
         print("accuracy # after", accuracy)
         print("accuracy % after", i, accuracy / int((len(rbf.trY) / batchSize)))
