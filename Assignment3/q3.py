@@ -12,15 +12,14 @@ import tensorflow as tf
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
-x_train = np.concatenate((x_train, x_test))
-y_train = np.concatenate((y_train, y_test))
+x_train = np.concatenate((x_train, x_test)).astype(np.float)
+y_train = np.concatenate((y_train, y_test)).astype(np.float)
 
 dataset = []
 for x in range(len(x_train)):
     if y_train[x] == 1 or y_train[x] == 5:
         dataset.append((x_train[x].reshape([1, 784]), y_train[x]))
 
-print(len(dataset))
 
 shuffle(dataset)
 
@@ -36,14 +35,10 @@ som = MiniSom(x_dim, y_dim, input_len, sigma=sigma, learning_rate=learning_rate)
 def som_demo(title):
     plt.figure(figsize=(5, 5))
 
-    i = 0
     for index, item in enumerate(dataset):
-        i += 1
-        if i % 100 == 0:
-            print("Training at", i)
         image, label = item
         i, j = som.winner(image)
-        plt.text(i, j, str(label), color=plt.cm.Dark2(label / 5.), fontdict={'size': 12})
+        plt.text(i, j, str(int(label)), color=plt.cm.Dark2(label / 5.), fontdict={'size': 12})
     plt.axis([0, x_dim, 0, y_dim])
     plt.title(title)
     plt.show()
@@ -51,8 +46,7 @@ def som_demo(title):
 
 som_demo('SOM - before training')
 epochs = 1500
-print([i[0][0] for i in dataset[:2]])
-som.train_random([i[0] for i in dataset[:1024]], epochs)
+som.train_random([i[0][0] for i in dataset], epochs)
 som_demo('SOM - after training %s epochs' % epochs)
 
 
@@ -60,7 +54,7 @@ def min_max(np_arr):
     return [np_arr.min() - 1, np_arr.max() + 1]
 
 
-rd = PCA(n_components=2).fit_transform([scale(x[0]) for x in dataset[:1024]])
+rd = PCA(n_components=2).fit_transform(np.array([np.array(scale(x[0][0])) for x in dataset]))
 kmeans = KMeans(n_clusters=2)
 kmeans.fit(rd)
 
@@ -71,13 +65,13 @@ y_min, y_max = min_max(rd[:,1])
 
 xx, yy = np.meshgrid(np.arange(x_min, x_max, .1), np.arange(y_min, y_max, .1))
 bounds = [xx.min(), xx.max(), yy.min(), yy.max()]
-predictions = kmeans.predict(zip(xx.flatten(), yy.flatten()))
+predictions = kmeans.predict(np.vstack((xx.flatten(), yy.flatten())).T)
 plt.imshow(predictions.reshape(xx.shape), extent=bounds, cmap=plt.cm.Accent_r, origin='lower')
 
 legend = []
 for label, color in [(1, 'orange'), (5, 'purple')]:
-    _ = np.array([rd[i] for i in range(1024) if dataset[i][1] is label])
-    plt.plot(_[:, 0], _[:, 1], 'k.', markersize=10, color=color)
+    a = np.array([rd[i] for i in range(len(dataset)) if dataset[i][1] != label])
+    plt.plot(a[:, 0], a[:, 1], 'k.', markersize=10, color=color)
     legend.append(patches.Patch(color=color, label=str(label)))
 
 centroids = kmeans.cluster_centers_
