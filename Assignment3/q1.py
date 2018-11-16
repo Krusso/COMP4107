@@ -1,8 +1,6 @@
-import argparse
-import tensorflow as tf 
-import sys
-from sklearn import datasets
+import matplotlib.pyplot as plt
 import numpy as np
+
 
 class HopfieldNetwork(object):
     def hebbian(self):
@@ -41,7 +39,7 @@ class HopfieldNetwork(object):
         while changed:
             changed = False
             indices = range(0, len(vector))
-            random.shuffle(indices)
+            np.random.shuffle(indices)
 
             # Vector to contain updated neuron activations on next iteration
             new_vector = [0] * len(vector)
@@ -66,6 +64,7 @@ class HopfieldNetwork(object):
 
         return s
 
+
 # Initialize the mnist data used in the notebook
 mnist = fetch_mldata('MNIST original', data_home='.cache')
 targets = mnist.target.tolist()
@@ -73,15 +72,15 @@ targets = mnist.target.tolist()
 ones = mnist.data[targets.index(1):targets.index(2)]
 ones = [[1 if p > 0 else -1 for p in v] for v in ones]
 ones = [(x, 1) for x in ones]
-random.shuffle(ones)
+np.random.shuffle(ones)
 
 fives = mnist.data[targets.index(5):targets.index(6)]
 fives = [[1 if p > 0 else -1 for p in v] for v in fives]
 fives = [(x, 5) for x in fives]
-random.shuffle(fives)
+np.random.shuffle(fives)
 
 testing_set = ones[20:30] + fives[20:30]
-random.shuffle(testing_set)
+np.random.shuffle(testing_set)
 
 THRESHOLD = 30
 
@@ -103,7 +102,7 @@ def add_noise(vector, ratio=0.2):
     indices = range(len(vector))
     num = ratio * len(indices)
     for i in range(int(num)):
-        c = random.choice(indices)
+        c = np.random.choice(indices)
         vector[c] = 1 if vector[c] == -1 else -1
 
 
@@ -151,7 +150,7 @@ y = list()
 
 for i in range(1, 20):
     training_set = ones[30:30 + i] + fives[30:30 + i]
-    random.shuffle(training_set)
+    np.random.shuffle(training_set)
 
     hf_hebbian = hf_hebbian = HopfieldNetwork(
         train_dataset=training_set,
@@ -180,7 +179,7 @@ y = list()
 
 for i in range(4, 20):
     training_set_sto = ones[30:30 + i] + fives[30:30 + i]
-    random.shuffle(training_set_sto)
+    np.random.shuffle(training_set_sto)
     hf_storkey = HopfieldNetwork(
         train_dataset=training_set_sto,
         mode='storkey'
