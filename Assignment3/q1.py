@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.misc import imrotate
+import tensorflow as tf
 
 
 class HopfieldNetwork(object):
@@ -65,16 +67,24 @@ class HopfieldNetwork(object):
         return s
 
 
-# Initialize the mnist data used in the notebook
-mnist = fetch_mldata('MNIST original', data_home='.cache')
-targets = mnist.target.tolist()
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
-ones = mnist.data[targets.index(1):targets.index(2)]
+x_train = np.concatenate((x_train, x_test)).astype(np.float)
+y_train = np.concatenate((y_train, y_test)).astype(np.float)
+
+ones = []
+fives = []
+
+for j in range(len(x_train)):
+    if y_train[j] == 1:
+        ones.append(x_train[j])
+    elif y_train[j] == 5:
+        fives.append(x_train[j])
+
 ones = [[1 if p > 0 else -1 for p in v] for v in ones]
 ones = [(x, 1) for x in ones]
 np.random.shuffle(ones)
 
-fives = mnist.data[targets.index(5):targets.index(6)]
 fives = [[1 if p > 0 else -1 for p in v] for v in fives]
 fives = [(x, 5) for x in fives]
 np.random.shuffle(fives)
