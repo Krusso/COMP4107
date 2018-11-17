@@ -10,24 +10,23 @@ EPOCHS = 100
 PCA_COMPONENTS = 75
 
 
-def load_data(pca=False):
+def load_data(dataset, pca=False):
     """
     Loads the cached scikit learn data.
     """
-    data = np.load('.cache/mldata/lfw_people_data.npy')
-    target = np.load('.cache/mldata/lfw_people_target.npy')
 
     # One-hot the label data
-    labels = np.zeros(shape=(target.shape[0], target.max() + 1))
-    for i, x in enumerate(target):
+    labels = np.zeros(shape=(dataset['target'].shape[0], dataset['target'].max() + 1))
+    for i, x in enumerate(dataset['target']):
         labels[i][x] = 1
 
     if pca:
         # Compute principle components of input data
-        data = PCA(n_components=PCA_COMPONENTS, svd_solver='randomized', whiten=True).fit_transform(data)
+        data = PCA(n_components=PCA_COMPONENTS, svd_solver='randomized', whiten=True).\
+            fit_transform(dataset['data'])
     else:
         # Regularize the input data
-        data = data / data.max()
+        data = dataset['data'] / dataset['data'].max()
 
     return data, labels
 
@@ -107,11 +106,14 @@ class FacialRecognitionNetwork(object):
         plt.show()
 
 
-fetch_lfw_people(data_home='.cache/', min_faces_per_person=70)
-data, labels = load_data()
+dataset = fetch_lfw_people(data_home='.cache/', min_faces_per_person=70)
+print(dataset['data'])
+print(dataset['target'])
+print("cached")
+data, labels = load_data(dataset)
 
 # Load data split into 150 Principle Components
-data_pca, labels_pca = load_data(pca=True)
+data_pca, labels_pca = load_data(dataset, pca=True)
 
 # Instantiate two different Neural Network architectures
 # 1. (200 x 50) with a learning rate of 0.05

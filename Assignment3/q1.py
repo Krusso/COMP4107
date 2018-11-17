@@ -8,7 +8,7 @@ class HopfieldNetwork(object):
     def hebbian(self):
         self.W = np.zeros([self.num_neurons, self.num_neurons])
         for image_vector, _ in self.train_dataset:
-            self.W += np.outer(image_vector, image_vector) / self.num_neurons
+            self.W += np.matmul(image_vector, np.transpose(image))
         np.fill_diagonal(self.W, 0)
 
     def storkey(self):
@@ -40,7 +40,8 @@ class HopfieldNetwork(object):
         changed = True
         while changed:
             changed = False
-            indices = range(0, len(vector))
+            indices = [i for i in range(0, len(vector))]
+
             np.random.shuffle(indices)
 
             # Vector to contain updated neuron activations on next iteration
@@ -77,9 +78,9 @@ fives = []
 
 for j in range(len(x_train)):
     if y_train[j] == 1:
-        ones.append(x_train[j])
+        ones.append(x_train[j].reshape([1, 784])[0])
     elif y_train[j] == 5:
-        fives.append(x_train[j])
+        fives.append(x_train[j].reshape([1, 784])[0])
 
 ones = [[1 if p > 0 else -1 for p in v] for v in ones]
 ones = [(x, 1) for x in ones]
@@ -126,6 +127,7 @@ def show(img, title='', suptitle=''):
 def test(network, index, item, sup, plot=False):
     # Measures classification accuracy by diff the activated image vector
     image = np.array(item[0]).reshape(28, 28)
+
     result = np.array(network.activate(item[0])).reshape(28, 28)
 
     label = item[1]
@@ -158,7 +160,7 @@ def test(network, index, item, sup, plot=False):
 x = list()
 y = list()
 
-for i in range(1, 20):
+for i in range(1, 70):
     training_set = ones[30:30 + i] + fives[30:30 + i]
     np.random.shuffle(training_set)
 
@@ -169,7 +171,8 @@ for i in range(1, 20):
 
     hebb_acc = 0.
     for index, image in enumerate(testing_set):
-        # Change to plot=True to see low energy state visualizations
+        # Change to plot=True to see lw energy state visualizations
+
         norm = test(hf_hebbian, index, image, "Mode=Hebbian", plot=False)
 
         if norm <= THRESHOLD:
@@ -187,7 +190,7 @@ plot_accuracy(x, y, "Hebbian Hopfield Network Accuracy vs. Training Samples Used
 x = list()
 y = list()
 
-for i in range(4, 20):
+for i in range(4, 70):
     training_set_sto = ones[30:30 + i] + fives[30:30 + i]
     np.random.shuffle(training_set_sto)
     hf_storkey = HopfieldNetwork(
