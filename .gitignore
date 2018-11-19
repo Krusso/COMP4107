@@ -1,4 +1,6 @@
 .idea/
 test/
 Assignment2/mlp
+Assignment3/logs
+Assignment3/MNIST_data
 .cache
