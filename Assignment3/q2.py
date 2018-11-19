@@ -74,7 +74,7 @@ class mnistDataset:
                 kmeans = sk.KMeans(n_clusters=k, n_init=1).fit(self.data)
                 print(k, "using best fit", kmeans.inertia_)
                 summary_writer.add_summary(tf.Summary(value=[
-                    tf.Summary.Value(tag="objective function", simple_value=kmeans.inertia_/10),
+                    tf.Summary.Value(tag="objective function", simple_value=avg/10),
                 ]), k)
 
     def getCentroids(self, k=centroids):
@@ -107,15 +107,13 @@ class mnistDataset:
         return tf.divide(1, tf.multiply(2., tf.square(sigma)))
 
 
-
-
-
 def printAccuracy(data, labels, size, sess):
     accuracy = 0.
     for start, end in zip(range(0, len(data), size), range(size, len(data) + 1, size)):
         accuracy += np.mean(np.argmax(labels[start:end], axis=1) ==
                             sess.run(predict_op, feed_dict={X: data[start:end]}))
     return accuracy
+
 
 attempt = 0
 
@@ -133,7 +131,7 @@ for keep_prob in [0.5, 1.0]:
     rbf = mnistDataset()
     c = rbf.getCentroids()
     py_x = model(X, w_h1, centroid=c,
-                b=rbf.getBetas(c), keep_prob=keep_prob)
+                 b=rbf.getBetas(c), keep_prob=keep_prob)
     predict_op = tf.argmax(py_x, 1)
     y_true_cls = tf.argmax(Y, dimension=1)
     batch_accuracies = tf.placeholder("float", [None])
@@ -150,7 +148,6 @@ for keep_prob in [0.5, 1.0]:
     #summaries
     tf.summary.scalar('accuracy', mean_accuracy)
 
-        
     batchSize = 50
     testSize = 100
 
