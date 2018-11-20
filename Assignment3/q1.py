@@ -3,7 +3,6 @@ import numpy as np
 from scipy.misc import imrotate
 import tensorflow as tf
 
-
 class HopfieldNetwork(object):
     def hebbian(self):
         self.W = np.zeros([self.num_neurons, self.num_neurons])
