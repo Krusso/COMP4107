@@ -7,7 +7,7 @@ class HopfieldNetwork(object):
     def hebbian(self):
         self.W = np.zeros([self.num_neurons, self.num_neurons])
         for image_vector, _ in self.train_dataset:
-            self.W += np.matmul(image_vector, np.transpose(image))
+            self.W += np.matmul(image_vector, np.transpose(image_vector))
         np.fill_diagonal(self.W, 0)
 
     def storkey(self):
@@ -156,33 +156,38 @@ def test(network, index, item, sup, plot=False):
 
 # Test Hebbian-based Hopfield network classification accuracy
 
-x = list()
-y = list()
+x = [0 for _ in range(1, 70)]
+y = [0 for _ in range(1, 70)]
 
-for i in range(1, 70):
-    training_set = ones[30:30 + i] + fives[30:30 + i]
-    np.random.shuffle(training_set)
+print(x)
+print(y)
+for run in range(10):
+    for i in range(1, 70):
+        training_set = ones[30:30 + i] + fives[30:30 + i]
+        np.random.shuffle(training_set)
 
-    hf_hebbian = hf_hebbian = HopfieldNetwork(
-        train_dataset=training_set,
-        mode='hebbian'
-    )
+        hf_hebbian = hf_hebbian = HopfieldNetwork(
+            train_dataset=training_set,
+            mode='hebbian'
+        )
 
-    hebb_acc = 0.
-    for index, image in enumerate(testing_set):
-        # Change to plot=True to see lw energy state visualizations
+        hebb_acc = 0.
+        for index, image in enumerate(testing_set):
+            # Change to plot=True to see lw energy state visualizations
 
-        norm = test(hf_hebbian, index, image, "Mode=Hebbian", plot=False)
+            norm = test(hf_hebbian, index, image, "Mode=Hebbian", plot=False)
 
-        if norm <= THRESHOLD:
-            hebb_acc += 1
+            if norm <= THRESHOLD:
+                hebb_acc += 1
 
-    x.append(i * 2)
-    y.append(hebb_acc / len(testing_set))
+        # x.append(i * 2)
+        x[i - 1] = i * 2
+        # y.append(hebb_acc / len(testing_set))
+        y[i - 1] = hebb_acc / len(testing_set)
 
-    print("Hebbian accuracy trained with {} samples:".format(i * 2)), (hebb_acc / len(testing_set))
+        print("Hebbian accuracy trained with {} samples: accuracy {}".format(i * 2)), (hebb_acc / len(testing_set), hebb_acc / len(testing_set))
 
-plot_accuracy(x, y, "Hebbian Hopfield Network Accuracy vs. Training Samples Used")
+plot_accuracy(np.divide(x, 10), np.divide(y, 10), "Hebbian Hopfield Network Accuracy vs. Training Samples Used")
 
 # Test Storkey-based Hopfield network classification accuracy
 
