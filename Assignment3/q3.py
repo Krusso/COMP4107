@@ -54,33 +54,36 @@ def min_max(np_arr):
     return [np_arr.min() - 1, np_arr.max() + 1]
 
 
-rd = PCA(n_components=2).fit_transform(np.array([np.array(scale(x[0][0])) for x in dataset]))
-kmeans = KMeans(n_clusters=2)
-kmeans.fit(rd)
+for k in range(2, 10):
+    # PCA uses SVD
+    rd = PCA(n_components=2).fit_transform(np.array([np.array(scale(x[0][0])) for x in dataset]))
+    kmeans = KMeans(n_clusters=k)
+    kmeans.fit(rd)
 
-plt.figure(figsize=(5, 5))
+    plt.figure(figsize=(5, 5))
 
-x_min, x_max = min_max(rd[:,0])
-y_min, y_max = min_max(rd[:,1])
+    x_min, x_max = min_max(rd[:,0])
+    y_min, y_max = min_max(rd[:,1])
 
-xx, yy = np.meshgrid(np.arange(x_min, x_max, .1), np.arange(y_min, y_max, .1))
-bounds = [xx.min(), xx.max(), yy.min(), yy.max()]
-predictions = kmeans.predict(np.vstack((xx.flatten(), yy.flatten())).T)
-plt.imshow(predictions.reshape(xx.shape), extent=bounds, cmap=plt.cm.Accent_r, origin='lower')
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, .1), np.arange(y_min, y_max, .1))
+    bounds = [xx.min(), xx.max(), yy.min(), yy.max()]
+    predictions = kmeans.predict(np.vstack((xx.flatten(), yy.flatten())).T)
+    plt.imshow(predictions.reshape(xx.shape), extent=bounds, cmap=plt.cm.Accent_r, origin='lower')
 
-legend = []
-for label, color in [(1, 'orange'), (5, 'purple')]:
-    a = np.array([rd[i] for i in range(len(dataset)) if dataset[i][1] != label])
-    plt.plot(a[:, 0], a[:, 1], 'k.', markersize=10, color=color)
-    legend.append(patches.Patch(color=color, label=str(label)))
+    legend = []
+    # https://en.wikipedia.org/wiki/Voronoi_diagram
+    for label, color in [(1, 'orange'), (5, 'purple')]:
+        a = np.array([rd[i] for i in range(len(dataset)) if dataset[i][1] != label])
+        plt.plot(a[:, 0], a[:, 1], 'k.', markersize=10, color=color)
+        legend.append(patches.Patch(color=color, label=str(label)))
 
-centroids = kmeans.cluster_centers_
-plt.scatter(centroids[:, 0], centroids[:, 1], s=1, color='w', zorder=10, marker='*', linewidth=10)
+    centroids = kmeans.cluster_centers_
+    plt.scatter(centroids[:, 0], centroids[:, 1], s=1, color='w', zorder=10, marker='*', linewidth=10)
 
-plt.title('K-means Clustering on PCA Reduced Mnist')
-plt.legend(handles=legend)
-plt.xticks([])
-plt.yticks([])
-plt.xlim(x_min, x_max)
-plt.ylim(y_min, y_max)
-plt.show()
+    plt.title('K-means Clustering on PCA Reduced Mnist')
+    plt.legend(handles=legend)
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
+    plt.show()
