@@ -8,6 +8,7 @@ from sklearn.datasets import fetch_lfw_people
 
 EPOCHS = 100
 
+
 def load_data(dataset, pca=False, pca_components=75):
     labels = np.zeros(shape=(dataset['target'].shape[0], dataset['target'].max() + 1))
     for i, x in enumerate(dataset['target']):
@@ -32,9 +33,9 @@ class FacialRecognitionNetwork(object):
         self.Y = tf.placeholder("float", [None, output_layer])
 
         # Initialize weight matrices
-        self.w_h1 = self.__init_weights(input_size, hidden_layer1)
-        self.w_h2 = self.__init_weights(hidden_layer1, hidden_layer2)
-        self.w_o = self.__init_weights(hidden_layer2, output_layer)
+        self.w_h1 = self.init_weights(input_size, hidden_layer1)
+        self.w_h2 = self.init_weights(hidden_layer1, hidden_layer2)
+        self.w_o = self.init_weights(hidden_layer2, output_layer)
 
         # Initialize the Neural Network model
         self.py_x = self.model()
@@ -46,8 +47,7 @@ class FacialRecognitionNetwork(object):
         self.accuracies = []
         self.mean_accuracy = None
 
-    @staticmethod
-    def __init_weights(s1, s2):
+    def init_weights(s1, s2):
         sigma = math.sqrt(2) * math.sqrt(2 / (s1 + s2))
         return tf.Variable(tf.random_normal([s1, s2], stddev=sigma))
 
