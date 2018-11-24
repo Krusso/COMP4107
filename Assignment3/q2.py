@@ -7,7 +7,7 @@ from sklearn.model_selection import KFold
 import os
 
 def init_weights(shape):
-    return tf.Variable(tf.random_normal(shape, stddev=0.75))
+    return tf.Variable(tf.truncated_normal(shape, stddev=1.0))
 
 
 input_size = 784
@@ -16,35 +16,44 @@ centroids = 75
 
 
 def model(X, w, centroid, numCentroids, b, keep_prob=0.5, use_dropout = True):
-    #with tf.Session() as sess:
-    #tf.global_variables_initializer().run()
+    #X has shape [None, 784]
     b = tf.transpose(b)
-    #print("stack", sess.run(tf.tile(tf.expand_dims(X, 1), [1, 2, 1]), feed_dict={X: [[0, 0], [1, 1]]}))
-    #print("centroid", sess.run(tf.reshape(tf.tile(centroid, [2, 1]), [2, 2, 2]), feed_dict={X: [[0, 0], [1, 1]]}))
-
+    print(b)
     x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, numCentroids, 1]))
-
-    # dropout = tf.nn.dropout(w, keep_prob=keep_prob)
-
     centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
                                                                                 numCentroids,
                                                                                 input_size]))
-
-    #print("subtract", sess.run(tf.subtract(x1, centroid1), feed_dict={X: [[0, 0], [1, 1]]}))
-    #print("subtract", sess.run(tf.norm(tf.subtract(x1, centroid1), axis=-1), feed_dict={X: [[0, 0], [1, 1]]}))
+    
     dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
-    #print("weights inside", sess.run(w))
-    #print("dist", sess.run(dist, feed_dict={X: [[0, 0], [1, 1]]}))
-    #print("b", b)
+    print(dist)
     negative = tf.to_float(tf.negative(b))
-    #print("negative", sess.run(negative, feed_dict={X: [[0, 0], [1, 1]]}))
     beta = tf.multiply(negative, dist)
-    #print("beta", sess.run(beta, feed_dict={X: [[0, 0], [1, 1]]}))
     exponent = tf.exp(beta)
-    #print("w", sess.run(w, feed_dict={X: [[0, 0], [1, 1]]}))
-    #print("exponent", sess.run(exponent, feed_dict={X: [[0, 0], [1, 1]]}))
+    print(exponent)
+    # with tf.Session() as sess:
+    #     print(sess.run(X))
+    #     print(sess.run(centroid))
+    # print('X',X)
+    # print('centroid,', centroid)
+    # subtract = tf.subtract(X, centroid)
+    # print(subtract)
+    # sum1 = tf.reduce_sum([X, tf.negative(centroid)], axis=0)
+    # print(sum1)
+    # norm = tf.norm(sum1, axis=1, keepdims=True)
+    # print(norm)
+    # dist = tf.square(norm)
+    # print(dist)
+    # negative = tf.to_float(tf.negative(b))
+    # beta = tf.multiply(negative, dist)
+    # exponent = tf.exp(beta)
+    # print('b,', b)
+
     if use_dropout:
         dropout = tf.nn.dropout(w, keep_prob=keep_prob)
+        print(dist)
+        print(dropout)
+        print(exponent)
+        print(b)
         return tf.matmul(exponent, dropout)
     else:
         return tf.matmul(exponent, w)
@@ -59,33 +68,13 @@ class mnistDataset:
         self.labels = np.append(trY1, teY1, axis=0)
         self.data, self.labels = shuffle(self.data, self.labels)
 
-        # print('shape of labels:', self.labels.shape)
-        # self.data_separated = [[] for i in range(10)]
-        # self.labels_separated = [[] for i in range(10)]
+        #normalize data
+        for i in range(len(self.data)):
+            image_vector = self.data[i]
+            self.data[i] = [j/255.0 for j in image_vector]
 
-        # print(self.labels_separated)
-        # print("length", len(self.data))
-        # for i in range(len(self.data)):
-        #     data_label = np.where(self.labels[i]==1)[0][0] #find index of 1 in one_hot encoded label
-        #     self.data_separated[data_label].append(self.data[i]) #use label as index for data_separated
-        #     self.labels_separated[data_label].append(self.labels[i])
-        # for i in range(10):
-        #     print(len(self.data_separated[i]), len(self.labels_separated[i]))
-        # self.labels_separated = np.asarray(self.labels_separated)
-        
-        # self.ordered_data = self.data_separated[0]
-        # self.ordered_labels = self.labels_separated[0]
-        # self.ordered_labels = [self.ordered_labels.extend(self.labels_separated[i]) for i in range(len(self.labels_separated))]
-        # print('len', len(self.ordered_labels))
-        # # self.ordered_labels = self.ordered_labels.flatten()
-        # for i in range(1,10):
-        #     self.ordered_data = np.append(self.ordered_data, self.data_separated[i], axis=0)
-        #     # print(len(self.ordered_labels))
-        #     # print(self.labels_separated.shape
-        #     # self.ordered_labels = np.append(self.ordered_labels, self.labels_separated[i])
-        # # self.data, self.labels = shuffle(self.data, self.labels)
-        # print(self.ordered_data.shape)
-        # # print(self.ordered_labels.shape)
+    def reshuffle(self):
+        self.data, self.labels = shuffle(self.data, self.labels)
 
     def kmean(self):
         with tf.Session() as sess:
@@ -180,8 +169,8 @@ rbf = mnistDataset()
 # rbf.kmean() #Uncomment this line to get the kmeans graph, we see that the elbow is at around k=70 to k=80
 #As such, we will pick k=75 
 #Modify these numbers to answer question 3 and 4
-kcentroids = [50,60,70,80,90] 
-keep_probs = [1.0]
+kcentroids = [70] 
+keep_probs = [0.85, 1.0]
 kcentroid_accuracies = []
 for numCentroids in kcentroids:
     c = rbf.getCentroids(k=numCentroids)
@@ -213,9 +202,9 @@ for numCentroids in kcentroids:
         #summaries
         tf.summary.scalar('accuracy', mean_accuracy)
 
-        batchSize = 128
-        testSize = 100
-
+        batchSize = 70
+        
+        k_fold_accuracy = 0
         for train_index, test_index in KFold(n_splits=k_folds).split(rbf.data):
             fold += 1
             print(train_index, test_index)
@@ -229,19 +218,19 @@ for numCentroids in kcentroids:
                 tf.global_variables_initializer().run()
                 
                 # print("accuracy % before running testing", accuracy / int((len(rbf.teY) / batchSize)))
-                for i in range(50):
-                    weightsBefore = sess.run(w_h1)
+                for i in range(200):
                     cost2 = 0
                     for start, end in zip(range(0, len(trX), batchSize), range(batchSize, len(trX)+1, batchSize)):
                         sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end]})
-                        cost1 = sess.run(cost, feed_dict={X: trX[start:end], Y: trY[start:end]})
+                        # cost1 = sess.run(cost, feed_dict={X: trX[start:end], Y: trY[start:end]})
                         #print("Cost", cost1)
-                        cost2 += cost1
+                        # cost2 += cost1
                     #testing
                     total_accuracy = []
                     # num = tf.Variable(0)
                     for start, end in zip(range(0, len(teX), batchSize), range(batchSize, len(teX) + 1, batchSize)):
                         test_batch_accuracy = sess.run(acc, feed_dict={X:teX[start:end], Y:teY[start:end]})
+                        # print('accuracy:',test_batch_accuracy)
                         total_accuracy.append(test_batch_accuracy)
                         # num = tf.add(num, 1)
                     
@@ -252,10 +241,11 @@ for numCentroids in kcentroids:
         k_fold_accuracy = k_fold_accuracy/k_folds
         kcentroid_accuracies.append(k_fold_accuracy)
         with tf.Session() as sess:
-            sw = tf.summary.FileWriter('logs/attempt_{}/k_hidden_neurons'.format(attempt), graph=sess.graph)
+            # sw = tf.summary.FileWriter('logs/attempt_{}/k_hidden_neurons'.format(attempt), graph=sess.graph)
+            sw = tf.summary.FileWriter('logs/attempt_{}/k_dropout'.format(attempt), graph=sess.graph)
             sw.add_summary(tf.Summary(value=[
                 tf.Summary.Value(tag="Accuracy", simple_value=k_fold_accuracy),
-            ]), numCentroids)
+            ]), keep_probs)
 
         print("K-fold cross validation accuracy: {}".format(k_fold_accuracy))
 
