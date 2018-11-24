@@ -10,17 +10,14 @@ from sklearn.preprocessing import scale
 from sklearn.cluster import KMeans
 import tensorflow as tf
 
+#Load dataset
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-
 x_train = np.concatenate((x_train, x_test)).astype(np.float)
 y_train = np.concatenate((y_train, y_test)).astype(np.float)
-
 dataset = []
 for x in range(len(x_train)):
     if y_train[x] == 1 or y_train[x] == 5:
         dataset.append((x_train[x].reshape([1, 784]), y_train[x]))
-
-
 shuffle(dataset)
 
 x_dim = 20
@@ -31,7 +28,7 @@ learning_rate = .25
 
 som = MiniSom(x_dim, y_dim, input_len, sigma=sigma, learning_rate=learning_rate)
 
-
+#Document the dimensions of the SOM computed and the learning parameters
 def som_demo(title):
     plt.figure(figsize=(5, 5))
 
@@ -42,7 +39,6 @@ def som_demo(title):
     plt.axis([0, x_dim, 0, y_dim])
     plt.title(title)
     plt.show()
-
 
 som_demo('SOM - before training')
 epochs = 1500
