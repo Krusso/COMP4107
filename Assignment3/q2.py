@@ -6,6 +6,7 @@ import tensorflow as tf
 from sklearn.model_selection import KFold
 import os
 
+
 def init_weights(shape):
     return tf.Variable(tf.random_normal(shape, stddev=1.0))
 
@@ -17,19 +18,19 @@ centroids = 75
 
 def model(X, w, centroid, numCentroids, b, use_dropout, keep_prob):
     #X has shape [None, 784]
-    b = tf.transpose(b)
-    print(b)
-    x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, numCentroids, 1]))
-    centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
-                                                                                numCentroids,
-                                                                                input_size]))
-    
-    dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
-    print(dist)
-    negative = tf.to_float(tf.negative(b))
-    beta = tf.multiply(negative, dist)
-    exponent = tf.exp(beta)
-    print(exponent)
+    # b = tf.transpose(b)
+    # print(b)
+    # x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, numCentroids, 1]))
+    # centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
+    #                                                                             numCentroids,
+    #                                                                             input_size]))
+    #
+    # dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
+    # print(dist)
+    # negative = tf.to_float(tf.negative(b))
+    # beta = tf.multiply(negative, dist)
+    # exponent = tf.exp(beta)
+    # print(exponent)
     # with tf.Session() as sess:
     #     print(sess.run(X))
     #     print(sess.run(centroid))
@@ -37,16 +38,16 @@ def model(X, w, centroid, numCentroids, b, use_dropout, keep_prob):
     # print('centroid,', centroid)
     # subtract = tf.subtract(X, centroid)
     # print(subtract)
-    # sum1 = tf.reduce_sum([X, tf.negative(centroid)], axis=0)
-    # print(sum1)
-    # norm = tf.norm(sum1, axis=1, keepdims=True)
-    # print(norm)
-    # dist = tf.square(norm)
-    # print(dist)
-    # negative = tf.to_float(tf.negative(b))
-    # beta = tf.multiply(negative, dist)
-    # exponent = tf.exp(beta)
-    # print('b,', b)
+    sum1 = tf.reduce_sum([X, tf.negative(centroid)], axis=0)
+    print(sum1)
+    norm = tf.norm(sum1, axis=1, keepdims=True)
+    print(norm)
+    dist = tf.square(norm)
+    print(dist)
+    negative = tf.to_float(tf.negative(b))
+    beta = tf.multiply(negative, dist)
+    exponent = tf.exp(beta)
+    print('b,', b)
 
     if use_dropout:
         # dropout = tf.nn.dropout(w, keep_prob=keep_prob)
@@ -69,13 +70,10 @@ class mnistDataset:
         self.labels = np.append(trY1, teY1, axis=0)
         self.data, self.labels = shuffle(self.data, self.labels)
 
-        #normalize data
+        # normalize data
         for i in range(len(self.data)):
             image_vector = self.data[i]
             self.data[i] = [j/255.0 for j in image_vector]
-
-    def reshuffle(self):
-        self.data, self.labels = shuffle(self.data, self.labels)
 
     def kmean(self):
         with tf.Session() as sess:
@@ -83,9 +81,9 @@ class mnistDataset:
 
             for k in range(20, 150, 2):
                 avg = 0
-                #average the mean over 3 runs
+                # average the mean over 3 runs
                 for _ in range(3):
-                    kmeans = kmeans = sk.KMeans(n_clusters=k, init='random', n_init=1).fit(self.data)
+                    kmeans = sk.KMeans(n_clusters=k, init='random', n_init=1).fit(self.data)
                     means = kmeans.cluster_centers_
 
                     sek = 0
@@ -104,17 +102,6 @@ class mnistDataset:
                 summary_writer.add_summary(tf.Summary(value=[
                     tf.Summary.Value(tag="objective function", simple_value=avg/3.0),
                 ]), k)
-                        
-                # for _ in range(0, 10, 1):
-                #     kmeans = sk.KMeans(n_clusters=k, init='random', n_init=1).fit(self.data)
-                #     means = kmeans.cluster_centers_
-
-                #     avg += kmeans.inertia_
-                #     print(k, kmeans.inertia_)
-
-                # kmeans = sk.KMeans(n_clusters=k, n_init=1).fit(self.data)
-                # print(k, "using best fit", kmeans.inertia_)
-
 
     def getCentroids(self, k=centroids):
         kmeans = sk.KMeans(n_clusters=k, init='random', n_init=1).fit(self.data)
@@ -158,7 +145,7 @@ attempt = 0
 
 while True:
     if os.path.isdir('./logs/attempt_{}'.format(attempt)):
-        attempt+=1
+        attempt += 1
     else:
         break
 
@@ -177,7 +164,7 @@ for numCentroids in kcentroids:
     c = rbf.getCentroids(k=numCentroids)
 
     for keep_prob in keep_probs:
-        #try with dropout and without
+        # try with dropout and without
         tf.reset_default_graph()
         w_h1 = init_weights([numCentroids, output_size])
         X = tf.placeholder("float", shape=[None, input_size])
@@ -185,8 +172,6 @@ for numCentroids in kcentroids:
         py_x = model(X, w_h1, centroid=c, numCentroids=numCentroids,
                     b=rbf.getBetas(c), keep_prob=keep_prob, use_dropout=True)
 
-        test_pred = model(X, w_h1, centroid=c,numCentroids=numCentroids,
-                b=rbf.getBetas(c), keep_prob=keep_prob, use_dropout=False)
         predict_op = tf.argmax(test_pred, 1)
         y_true_cls = tf.argmax(Y, dimension=1)
         batch_accuracies = tf.placeholder("float", [None])
@@ -197,10 +182,10 @@ for numCentroids in kcentroids:
             acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             mean_accuracy = tf.reduce_mean(tf.cast(batch_accuracies, tf.float32))
         
-        train_op = tf.train.AdamOptimizer(learning_rate=0.005).minimize(cost)
+        train_op = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
         # train_op = tf.train.GradientDescentOptimizer(learning_rate=0.01).minimize(cost)
 
-        #summaries
+        # summaries
         tf.summary.scalar('accuracy', mean_accuracy)
 
         batchSize = 1
@@ -213,7 +198,10 @@ for numCentroids in kcentroids:
             trX, teX = rbf.data[train_index], rbf.data[test_index]
             trY, teY = rbf.labels[train_index], rbf.labels[test_index]
             print(len(trX), len(trY))
-            result_dir = './logs/attempt_{}/fold_{}_keep_prob_{}_centroids_{}/'.format(attempt,fold, int(keep_prob*100), numCentroids)
+            result_dir = './logs/attempt_{}/fold_{}_keep_prob_{}_centroids_{}/'.format(attempt,
+                                                                                       fold,
+                                                                                       int(keep_prob*100),
+                                                                                       numCentroids)
             with tf.Session() as sess:
                 merged = tf.summary.merge_all()
                 summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
@@ -227,16 +215,18 @@ for numCentroids in kcentroids:
                         # cost1 = sess.run(cost, feed_dict={X: trX[start:end], Y: trY[start:end]})
                         #print("Cost", cost1)
                         # cost2 += cost1
-                    #testing
+                    # testing
                     total_accuracy = []
                     # num = tf.Variable(0)
                     for start, end in zip(range(0, len(teX), batchSize), range(batchSize, len(teX) + 1, batchSize)):
-                        test_batch_accuracy = sess.run(acc, feed_dict={X:teX[start:end], Y:teY[start:end]})
+                        test_batch_accuracy = sess.run(acc, feed_dict={X: teX[start:end], Y: teY[start:end]})
                         # print('accuracy:',test_batch_accuracy)
                         total_accuracy.append(test_batch_accuracy)
                         # num = tf.add(num, 1)
                     
-                    test_accuracy_summary, m_accuracy =  sess.run([merged, mean_accuracy], feed_dict={batch_accuracies:total_accuracy})
+                    test_accuracy_summary, m_accuracy = sess.run([merged, mean_accuracy],
+                                                                 feed_dict={batch_accuracies: total_accuracy})
+
                     summary_writer.add_summary(test_accuracy_summary, i+1)
                     print("Epoch : {}, Test Acc: {}".format(i+1, m_accuracy))
                 k_fold_accuracy += m_accuracy #final accuracy
@@ -259,30 +249,3 @@ for numCentroids in kcentroids:
         print("K-fold cross validation accuracy: {}".format(k_fold_accuracy))
 
 
-
-
-
-# data = mnistDataset()
-# data.kmean()
-
-# keep for now :)
-# kmeansDistance = kmeans.transform(self.trX)
-#
-# variance = 0
-# i = 0
-# for label in kmeans.labels_:
-#     variance = variance + kmeansDistance[i][label]
-#     i = i + 1
-#
-# print(variance)
-#
-# means = kmeans.cluster_centers_
-# s = 0
-# for x in self.trX:
-#     best = float("inf")
-#     for y in means:
-#         d = np.linalg.norm(x - y)
-#         if d < best:
-#             best = d
-#     s += best
-# print(s, "*****")
