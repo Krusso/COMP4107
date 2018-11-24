@@ -7,7 +7,7 @@ from sklearn.model_selection import KFold
 import os
 
 def init_weights(shape):
-    return tf.Variable(tf.truncated_normal(shape, stddev=1.0))
+    return tf.Variable(tf.random_normal(shape, stddev=1.0))
 
 
 input_size = 784
@@ -15,7 +15,7 @@ output_size = 10
 centroids = 75
 
 
-def model(X, w, centroid, numCentroids, b, keep_prob=0.5, use_dropout = True):
+def model(X, w, centroid, numCentroids, b, use_dropout, keep_prob):
     #X has shape [None, 784]
     b = tf.transpose(b)
     print(b)
@@ -49,12 +49,13 @@ def model(X, w, centroid, numCentroids, b, keep_prob=0.5, use_dropout = True):
     # print('b,', b)
 
     if use_dropout:
-        dropout = tf.nn.dropout(w, keep_prob=keep_prob)
-        print(dist)
-        print(dropout)
-        print(exponent)
-        print(b)
-        return tf.matmul(exponent, dropout)
+        # dropout = tf.nn.dropout(w, keep_prob=keep_prob)
+        # print(dist)
+        # print(dropout)
+        # print(exponent)
+        # print(b)
+        a = tf.matmul(exponent, w)
+        return tf.nn.dropout(a, keep_prob=keep_prob)
     else:
         return tf.matmul(exponent, w)
 
@@ -164,13 +165,13 @@ while True:
 k_fold_accuracy = 0
 k_folds = 5
 fold = 0
-epochs = 50
+epochs = 100
 rbf = mnistDataset()
 # rbf.kmean() #Uncomment this line to get the kmeans graph, we see that the elbow is at around k=70 to k=80
 #As such, we will pick k=75 
 #Modify these numbers to answer question 3 and 4
 kcentroids = [70] 
-keep_probs = [0.85, 1.0]
+keep_probs = [0.5, 0.80, 1.0]
 kcentroid_accuracies = []
 for numCentroids in kcentroids:
     c = rbf.getCentroids(k=numCentroids)
@@ -182,7 +183,7 @@ for numCentroids in kcentroids:
         X = tf.placeholder("float", shape=[None, input_size])
         Y = tf.placeholder("float", shape=[None, output_size])
         py_x = model(X, w_h1, centroid=c, numCentroids=numCentroids,
-                    b=rbf.getBetas(c), keep_prob=keep_prob)
+                    b=rbf.getBetas(c), keep_prob=keep_prob, use_dropout=True)
 
         test_pred = model(X, w_h1, centroid=c,numCentroids=numCentroids,
                 b=rbf.getBetas(c), keep_prob=keep_prob, use_dropout=False)
@@ -196,15 +197,16 @@ for numCentroids in kcentroids:
             acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             mean_accuracy = tf.reduce_mean(tf.cast(batch_accuracies, tf.float32))
         
-        train_op = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
+        train_op = tf.train.AdamOptimizer(learning_rate=0.005).minimize(cost)
         # train_op = tf.train.GradientDescentOptimizer(learning_rate=0.01).minimize(cost)
 
         #summaries
         tf.summary.scalar('accuracy', mean_accuracy)
 
-        batchSize = 70
+        batchSize = 1
         
         k_fold_accuracy = 0
+        k_acc = []
         for train_index, test_index in KFold(n_splits=k_folds).split(rbf.data):
             fold += 1
             print(train_index, test_index)
@@ -218,7 +220,7 @@ for numCentroids in kcentroids:
                 tf.global_variables_initializer().run()
                 
                 # print("accuracy % before running testing", accuracy / int((len(rbf.teY) / batchSize)))
-                for i in range(200):
+                for i in range(epochs):
                     cost2 = 0
                     for start, end in zip(range(0, len(trX), batchSize), range(batchSize, len(trX)+1, batchSize)):
                         sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end]})
@@ -238,14 +240,21 @@ for numCentroids in kcentroids:
                     summary_writer.add_summary(test_accuracy_summary, i+1)
                     print("Epoch : {}, Test Acc: {}".format(i+1, m_accuracy))
                 k_fold_accuracy += m_accuracy #final accuracy
+                
+                k_acc.append(m_accuracy)
+        mean = np.mean(k_acc)
+        std = np.std(k_acc)
         k_fold_accuracy = k_fold_accuracy/k_folds
         kcentroid_accuracies.append(k_fold_accuracy)
         with tf.Session() as sess:
             # sw = tf.summary.FileWriter('logs/attempt_{}/k_hidden_neurons'.format(attempt), graph=sess.graph)
             sw = tf.summary.FileWriter('logs/attempt_{}/k_dropout'.format(attempt), graph=sess.graph)
             sw.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag="Accuracy", simple_value=k_fold_accuracy),
-            ]), keep_probs)
+                tf.Summary.Value(tag="Mean Accuracy", simple_value=mean),
+            ]), keep_prob)
+            sw.add_summary(tf.Summary(value=[
+                tf.Summary.Value(tag="Std", simple_value=std),
+            ]), keep_prob)
 
         print("K-fold cross validation accuracy: {}".format(k_fold_accuracy))
 
