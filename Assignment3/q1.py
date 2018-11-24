@@ -6,14 +6,14 @@ import tensorflow as tf
 class HopfieldNetwork(object):
     def hebbian(self):
         self.W = np.zeros([self.num_neurons, self.num_neurons])
-        for image_vector, _ in self.train_dataset:
-            temp = np.matmul(np.array(image_vector).reshape(784, 1), np.array(image_vector).reshape(1, 784))
-            self.W = np.add(self.W, temp)
-        np.fill_diagonal(self.W, 0)
-        # np.set_printoptions(threshold=np.nan)
         # for image_vector, _ in self.train_dataset:
-        #     self.W += np.outer(image_vector, image_vector) / self.num_neurons
+        #     temp = np.matmul(np.array(image_vector).reshape(784, 1), np.array(image_vector).reshape(1, 784))
+        #     self.W = np.add(self.W, temp)
         # np.fill_diagonal(self.W, 0)
+        # np.set_printoptions(threshold=np.nan)
+        for image_vector, _ in self.train_dataset:
+            self.W += np.outer(image_vector, image_vector) / self.num_neurons
+        np.fill_diagonal(self.W, 0)
 
     def storkey(self):
         self.W = np.zeros([self.num_neurons, self.num_neurons])
@@ -33,12 +33,10 @@ class HopfieldNetwork(object):
         self.num_training = len(self.train_dataset)
         self.num_neurons = len(self.train_dataset[0][0])
 
-        self._modes = {
-            "hebbian": self.hebbian,
-            "storkey": self.storkey
-        }
-
-        self._modes[mode]()
+        if mode == 'hebbian':
+            self.hebbian()
+        else:
+            self.storkey()
 
     def activate(self, vector):
         changed = True
@@ -56,7 +54,12 @@ class HopfieldNetwork(object):
                 #print("changed")
                 neuron_index = indices.pop()
 
-                s = self.compute_sum(vector, neuron_index)
+                s = 0
+                for pixel_index in range(len(vector)):
+                    pixel = vector[pixel_index]
+                    if pixel > 0:
+                        s += self.W[neuron_index][pixel_index]
+
                 if s > 0:
                     new_vector[neuron_index] = 1
                 elif s < 0:
@@ -67,15 +70,6 @@ class HopfieldNetwork(object):
             vector = new_vector
 
         return vector
-
-    def compute_sum(self, vector, neuron_index):
-        s = 0
-        for pixel_index in range(len(vector)):
-            pixel = vector[pixel_index]
-            if pixel > 0:
-                s += self.W[neuron_index][pixel_index]
-
-        return s
 
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -100,7 +94,7 @@ fives = [[1 if p > 0 else -1 for p in v] for v in fives]
 fives = [(x, 5) for x in fives]
 np.random.shuffle(fives)
 
-testing_set = ones[20:30] + fives[20:30]
+testing_set = ones[500:600] + fives[500:600]
 np.random.shuffle(testing_set)
 
 THRESHOLD = 30
@@ -119,12 +113,11 @@ def plot_accuracy(x, y, title):
     plt.show()
 
 
-def add_noise(vector, ratio=0.2):
-    indices = range(len(vector))
-    num = ratio * len(indices)
-    for i in range(int(num)):
-        c = np.random.choice(indices)
-        vector[c] = 1 if vector[c] == -1 else -1
+def subshow(img, title='', suptitle=''):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(img)
+    ax.set_title(title)
 
 
 def show(img, title='', suptitle=''):
@@ -138,53 +131,93 @@ def test(network, index, item, ones, fives, sup, plot=False):
     # Measures classification accuracy by diff the activated image vector
     image = np.array(item[0]).reshape(28, 28)
 
-    result = np.array(network.activate(item[0])).reshape(28, 28)
+    result = np.array(network.activate(item[0]))
 
     label = item[1]
 
-    #print("result", result)
-    # for j in (np.array(ones) if label == 1 else np.array(fives)):
-    #     if np.array_equal(np.multiply(-1, result[0]), j):
-    #         return 1
-    #
-    # return 0
+    #print("comparing")
+    min_distance = float('inf')
+    for j in ones:
+        #subshow(np.array(j[0]).reshape(28, 28), "Training ones %s" % index, sup)
+        dist = np.linalg.norm(result - j[0])
+        if dist < min_distance:
+            min_distance = dist
+            winning_label = j[1]
 
-    contrast = np.array(fives[0][0]).reshape(28, 28) if label == 1 else np.array(ones[0][0]).reshape(28, 28)
-
-    contrast_norm = np.linalg.norm(contrast - result)
-    attempts = [
-        result,
-        imrotate(result, angle=30.),
-        imrotate(result, angle=-30.),
-    ]
-
-    best_attempt = float('inf')
-
-    for r in attempts:
-        for attempt in [r, np.invert(r)]:
-            attempt_norm = np.linalg.norm(image - attempt)
-            if attempt_norm < best_attempt:
-                best_attempt = attempt_norm
+    #print("comparing fives")
+    for j in fives:
+        #subshow(np.array(j[0]).reshape(28, 28), "Training 5 %s" % index, sup)
+        dist = np.linalg.norm(result - j[0])
+        if dist < min_distance:
+            min_distance = dist
+            winning_label = j[1]
 
     if plot:
-        print("guess", best_attempt)
-        show(image, "Input - Example %s" % index, sup)
-        show(result, "Output - Example %s" % index, sup)
+        subshow(image, "Original %s" % index, sup)
+        subshow(result.reshape(28, 28), "After %s" % index, sup)
+        print("winning label", winning_label)
+        plt.show()
 
-    return best_attempt if best_attempt < contrast_norm else float('inf')
+    return winning_label == label
+
+
+    #print("result", result)
+    #print(ones[0])
+    # if plot:
+    #     subshow(image, "Original %s" % index, sup)
+    #     subshow(result.reshape(28, 28), "After %s" % index, sup)
+    # for j in (np.array(ones) if label == 1 else np.array(fives)):
+    #     #print(j)
+    #     if plot:
+    #         subshow(np.array(j[0]).reshape(28, 28), "Training - Example %s" % index, "stuff")
+    #     if np.array_equal(np.multiply(-1, result), np.array(j[0])) or \
+    #        np.array_equal(result, np.array(j[0])):
+    #         if plot:
+    #             print("returning1")
+    #             plt.show()
+    #         return 1
+    #
+    # if plot:
+    #     print("returning")
+    #     plt.show()
+    # return 0
+
+    # contrast = np.array(fives[0][0]).reshape(28, 28) if label == 1 else np.array(ones[0][0]).reshape(28, 28)
+    #
+    # contrast_norm = np.linalg.norm(contrast - result)
+    # attempts = [
+    #     result,
+    #     imrotate(result, angle=30.),
+    #     imrotate(result, angle=-30.),
+    # ]
+    #
+    # best_attempt = float('inf')
+    #
+    # for r in attempts:
+    #     for attempt in [r, np.invert(r)]:
+    #         attempt_norm = np.linalg.norm(image - attempt)
+    #         if attempt_norm < best_attempt:
+    #             best_attempt = attempt_norm
+    #
+    # if plot:
+    #     print("guess", best_attempt)
+    #     show(image, "Input - Example %s" % index, sup)
+    #     show(result, "Output - Example %s" % index, sup)
+    #
+    # return best_attempt if best_attempt < contrast_norm else float('inf')
 
 
 # Test Hebbian-based Hopfield network classification accuracy
 
-x = [0 for _ in range(1, 70)]
-y = [0 for _ in range(1, 70)]
+x = [0 for _ in range(1, 5006)]
+y = [0 for _ in range(1, 5006)]
 
 runs = 2
-for run in range(2):
-    for i in range(1, 70, 1):
+for run in range(runs):
+    for i in list([10, 100, 250, 5000]):
         training_set = ones[30:30 + i] + fives[30:30 + i]
-        for image in training_set:
-            show(np.array(image[0]).reshape(28, 28), "Training", "trained")
+        #for image in training_set:
+        #    show(np.array(image[0]).reshape(28, 28), "Training", "trained")
 
         np.random.shuffle(training_set)
 
@@ -195,16 +228,18 @@ for run in range(2):
 
         hebb_acc = 0.
         for index, image in enumerate(testing_set):
-            norm = test(hf_hebbian, index, image, ones[30:30 + i], fives[30:30 + i], "Mode=Hebbian", plot=True)
+            norm = test(hf_hebbian, index, image, ones[30:30 + i], fives[30:30 + i],
+                        "Mode=Hebbian", plot=False)
 
             #print("norm", norm)
-            if norm <= THRESHOLD:
+            #if norm <= THRESHOLD:
+            if norm == 1:
                 hebb_acc += 1
 
         # x.append(i * 2)
-        x[i - 1] = i * 2
+        x[i - 1] += i * 2
         # y.append(hebb_acc / len(testing_set))
-        y[i - 1] = hebb_acc / len(testing_set)
+        y[i - 1] += hebb_acc / len(testing_set)
 
         print("hebbian accuracy", hebb_acc, "size", len(testing_set))
         print("Hebbian accuracy trained with {} samples: accuracy {}".format(i * 2, (hebb_acc / len(testing_set))))
@@ -227,17 +262,24 @@ for i in range(4, 70):
     )
 
     sto_acc = 0.
+    #i = 0
+    print("starting")
     for index, image in enumerate(testing_set):
+        #i += 1
+        #if i % 10 == 0:
+            #print("i", i)
         # Change to plot=True to see low energy state visualizations
-        norm = test(hf_storkey, index, image, "Mode=Storkey", plot=False)
+        norm = test(hf_storkey, index, image, ones[30:30 + i], fives[30:30 + i],
+                    "Mode=Storkey", plot=False)
 
-        if norm <= THRESHOLD:
+        #if norm <= THRESHOLD:
+        if norm == 1:
             sto_acc += 1
 
     x.append(i * 2)
     y.append(sto_acc / len(testing_set))
 
     # Uncomment below to show computed accuracies
-    print("Storkey accuracy trained with {} samples:".format(i * 2)), (sto_acc / len(testing_set))
+    print("Storkey accuracy trained with {} samples: {}".format(i * 2, (sto_acc / len(testing_set))))
 
 plot_accuracy(x, y, "Storkey Hopfield Network Accuracy vs. Training Samples Used")
