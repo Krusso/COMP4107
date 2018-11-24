@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import imrotate
 import tensorflow as tf
+from sklearn.utils import shuffle
+import itertools
 
 class HopfieldNetwork(object):
     def hebbian(self):
@@ -135,10 +137,10 @@ def test(network, index, item, ones, fives, sup, plot=False):
 
     label = item[1]
 
-    #print("comparing")
+    # print("comparing")
     min_distance = float('inf')
     for j in ones:
-        #subshow(np.array(j[0]).reshape(28, 28), "Training ones %s" % index, sup)
+        # subshow(np.array(j[0]).reshape(28, 28), "Training ones %s" % index, sup)
         dist = np.linalg.norm(result - j[0])
         if dist < min_distance:
             min_distance = dist
@@ -146,7 +148,7 @@ def test(network, index, item, ones, fives, sup, plot=False):
 
     #print("comparing fives")
     for j in fives:
-        #subshow(np.array(j[0]).reshape(28, 28), "Training 5 %s" % index, sup)
+        # subshow(np.array(j[0]).reshape(28, 28), "Training 5 %s" % index, sup)
         dist = np.linalg.norm(result - j[0])
         if dist < min_distance:
             min_distance = dist
@@ -208,6 +210,29 @@ def test(network, index, item, ones, fives, sup, plot=False):
 
 
 # Test Hebbian-based Hopfield network classification accuracy
+test = []
+for i in range(10):
+    test.append([-1, 1])
+
+testData = []
+for x in itertools.product(*test):
+    testData.append(x)
+
+testData = shuffle(testData)
+
+for length in range(10, 100, 10):
+    hf_hebbian = hf_hebbian = HopfieldNetwork(
+        train_dataset=testData[0:length],
+        mode='hebbian'
+    )
+    stable_patterns = set()
+    for vector in testData:
+        returned = hf_hebbian.activate(vector)
+        stable_patterns.add(tuple(returned))
+    print("length", length)
+    print("stable patterns", len(stable_patterns))
+
+
 
 x = [0 for _ in range(1, 5006)]
 y = [0 for _ in range(1, 5006)]
