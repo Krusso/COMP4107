@@ -8,8 +8,7 @@ from sklearn.datasets import fetch_lfw_people
 
 
 def init_weights(s1, s2):
-    sigma = math.sqrt(2) * math.sqrt(2 / (s1 + s2))
-    return tf.Variable(tf.random_normal([s1, s2], stddev=sigma))
+    return tf.Variable(tf.random_normal([s1, s2], stddev=math.sqrt(2) * math.sqrt(2 / (s1 + s2))))
 
 
 def model(X, w_h1, w_h2, w_o):
