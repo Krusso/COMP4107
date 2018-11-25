@@ -4,6 +4,16 @@ import tensorflow as tf
 
 
 class network(object):
+    def __init__(self, train_dataset=[], mode='hebbian'):
+        self.train_dataset = train_dataset
+        self.num_training = len(self.train_dataset)
+        self.num_neurons = len(self.train_dataset[0][0])
+
+        if mode == 'hebbian':
+            self.hebbian()
+        else:
+            self.storkey()
+
     def hebbian(self):
         # self.W = np.array([[0, -1, -3, 3],
         #                    [-1, 0, 1, -1],
@@ -32,16 +42,6 @@ class network(object):
             self.W = np.add(self.W, np.divide(np.subtract(hebbian, np.add(pre, post)), self.num_neurons))
 
         np.fill_diagonal(self.W, 0)
-
-    def __init__(self, train_dataset=[], mode='hebbian'):
-        self.train_dataset = train_dataset
-        self.num_training = len(self.train_dataset)
-        self.num_neurons = len(self.train_dataset[0][0])
-
-        if mode == 'hebbian':
-            self.hebbian()
-        else:
-            self.storkey()
 
     def activate(self, vector):
         changed = True
