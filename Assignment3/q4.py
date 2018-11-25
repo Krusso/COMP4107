@@ -115,5 +115,5 @@ for (hidden_layer1, hidden_layer2) in list([(625, 300), (400, 200)]):
             show(acc, ' '.join(["Accuracy for", str(hidden_layer1), "x",
                                 str(hidden_layer2), ", PCA components", str(components),
                                 ", learning rate", str(learning),
-                                ", mean", str(np.array(acc).mean()),
-                                ", stddev", str(np.array(acc).std())]))
+                                ", mean", str(np.round(np.array(acc).mean(), 4)),
+                                ", stddev", str(np.round(np.array(acc).std(), 4))]))

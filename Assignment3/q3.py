@@ -10,7 +10,8 @@ from sklearn.preprocessing import scale
 from sklearn.cluster import KMeans
 import tensorflow as tf
 
-#Load dataset
+
+# Load dataset
 def get_data():
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     x_train = np.concatenate((x_train, x_test)).astype(np.float)
@@ -22,7 +23,8 @@ def get_data():
             shuffle(dataset)
     return dataset  
 
-#Plots what the current SOM looks like
+
+# Plots what the current SOM looks like
 def plot_som(title, som):
     plt.figure(figsize=(5, 5))
     for index, item in enumerate(dataset):
@@ -33,16 +35,13 @@ def plot_som(title, som):
     plt.title(title)
     plt.show()
 
-def min_max(np_arr):
-    return [np_arr.min() - 1, np_arr.max() + 1]
 
-#################################################
 #Part a)
 dataset = get_data()
 x_dim = 20
 y_dim = 20
 input_size = 784
-sigma = .9 # spread of neighbourhood function
+sigma = .9
 lr = .25
 
 som = MiniSom(x_dim, y_dim, input_size, sigma=sigma, learning_rate=lr)
@@ -51,8 +50,8 @@ epochs = 1500
 som.train_random([i[0][0] for i in dataset], epochs)
 plot_som('SOM - after training %s epochs' % epochs, som)
 
-#Part b)
-for k in [2,4,6,8,10,12,14,16,18]:
+# Part b)
+for k in [2, 4, 6, 8, 10, 12, 14, 16, 18]:
     # PCA uses SVD
     pca = PCA(n_components=2).fit_transform(np.array([np.array(scale(x[0][0])) for x in dataset]))
     kmeans = KMeans(n_clusters=k)
@@ -60,13 +59,13 @@ for k in [2,4,6,8,10,12,14,16,18]:
 
     plt.figure(figsize=(5, 5))
 
-    x_min, x_max = min_max(pca[:,0])
-    y_min, y_max = min_max(pca[:,1])
+    x_min, x_max = pca[:, 0].min() - 1, pca[:, 0].max() + 1
+    y_min, y_max = pca[:, 1].min() - 1, pca[:, 1].max() + 1
 
     xx, yy = np.meshgrid(np.arange(x_min, x_max, .1), np.arange(y_min, y_max, .1))
     bounds = [xx.min(), xx.max(), yy.min(), yy.max()]
     predictions = kmeans.predict(np.vstack((xx.flatten(), yy.flatten())).T)
-#     print(plt.cm.)
+
     plt.imshow(predictions.reshape(xx.shape), extent=bounds, cmap=plt.cm.Dark2, origin='lower')
 
     legend = []
