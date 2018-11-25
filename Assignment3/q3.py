@@ -10,7 +10,7 @@ from sklearn.preprocessing import scale
 from sklearn.cluster import KMeans
 import tensorflow as tf
 
-#Load dataset
+# Load dataset
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 x_train = np.concatenate((x_train, x_test)).astype(np.float)
 y_train = np.concatenate((y_train, y_test)).astype(np.float)
@@ -23,12 +23,12 @@ shuffle(dataset)
 x_dim = 20
 y_dim = 20
 input_len = 784
-sigma = .9 # spread of neighbourhood function
+sigma = .9
 learning_rate = .25
 
 som = MiniSom(x_dim, y_dim, input_len, sigma=sigma, learning_rate=learning_rate)
 
-#Document the dimensions of the SOM computed and the learning parameters
+
 def som_demo(title):
     plt.figure(figsize=(5, 5))
 
@@ -40,14 +40,11 @@ def som_demo(title):
     plt.title(title)
     plt.show()
 
+
 som_demo('SOM - before training')
 epochs = 1500
 som.train_random([i[0][0] for i in dataset], epochs)
 som_demo('SOM - after training %s epochs' % epochs)
-
-
-def min_max(np_arr):
-    return [np_arr.min() - 1, np_arr.max() + 1]
 
 
 for k in range(2, 10):
@@ -58,8 +55,8 @@ for k in range(2, 10):
 
     plt.figure(figsize=(5, 5))
 
-    x_min, x_max = min_max(rd[:,0])
-    y_min, y_max = min_max(rd[:,1])
+    x_min, x_max = rd[:, 0].min() - 1, rd[:, 0].max() + 1
+    y_min, y_max = rd[:, 1].min() - 1, rd[:, 1].max() + 1
 
     xx, yy = np.meshgrid(np.arange(x_min, x_max, .1), np.arange(y_min, y_max, .1))
     bounds = [xx.min(), xx.max(), yy.min(), yy.max()]

@@ -153,9 +153,9 @@ k_folds = 5
 fold = 0
 epochs = 50
 rbf = mnistDataset()
-# rbf.kmean() #Uncomment this line to get the kmeans graph, we see that the elbow is at around k=70 to k=80
-#As such, we will pick k=75 
-#Modify these numbers to answer question 3 and 4
+# rbf.kmean() # Uncomment this line to get the kmeans graph, we see that the elbow is at around k=70 to k=80
+# As such, we will pick k=75
+# Modify these numbers to answer question 3 and 4
 kcentroids = [70] 
 keep_probs = [0.85, 1.0]
 kcentroid_accuracies = []
