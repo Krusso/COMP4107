@@ -20,16 +20,16 @@ def model(X, w, centroid, numCentroids, b, use_dropout, keep_prob):
     #X has shape [None, 784]
     # b = tf.transpose(b)
     # print(b)
-    # x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, numCentroids, 1]))
-    # centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
-    #                                                                             numCentroids,
-    #                                                                             input_size]))
-    #
-    # dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
-    # print(dist)
-    # negative = tf.to_float(tf.negative(b))
-    # beta = tf.multiply(negative, dist)
-    # exponent = tf.exp(beta)
+    x1 = tf.to_float(tf.tile(tf.expand_dims(X, 1), [1, numCentroids, 1]))
+    centroid1 = tf.to_float(tf.reshape(tf.tile(centroid, [tf.shape(X)[0], 1]), [tf.shape(X)[0],
+                                                                                numCentroids,
+                                                                                input_size]))
+    
+    dist = tf.square(tf.norm(tf.subtract(x1, centroid1), axis=-1))
+    print(dist)
+    negative = tf.to_float(tf.negative(b))
+    beta = tf.multiply(negative, dist)
+    exponent = tf.exp(beta)
     # print(exponent)
     # with tf.Session() as sess:
     #     print(sess.run(X))
@@ -38,25 +38,25 @@ def model(X, w, centroid, numCentroids, b, use_dropout, keep_prob):
     # print('centroid,', centroid)
     # subtract = tf.subtract(X, centroid)
     # print(subtract)
-    sum1 = tf.reduce_sum([X, tf.negative(centroid)], axis=0)
-    print(sum1)
-    norm = tf.norm(sum1, axis=1, keepdims=True)
-    print(norm)
-    dist = tf.square(norm)
-    print(dist)
-    negative = tf.to_float(tf.negative(b))
-    beta = tf.multiply(negative, dist)
-    exponent = tf.exp(beta)
-    print('b,', b)
+    # sum1 = tf.reduce_sum([X, tf.negative(centroid)], axis=0)
+    # print(sum1)
+    # norm = tf.norm(sum1, axis=1, keepdims=True)
+    # print(norm)
+    # dist = tf.square(norm)
+    # print(dist)
+    # negative = tf.to_float(tf.negative(b))
+    # beta = tf.multiply(negative, dist)
+    # exponent = tf.exp(beta)
+    # print('b,', b)
 
     if use_dropout:
-        # dropout = tf.nn.dropout(w, keep_prob=keep_prob)
+        dropout = tf.nn.dropout(w, keep_prob=keep_prob)
         # print(dist)
         # print(dropout)
         # print(exponent)
         # print(b)
-        a = tf.matmul(exponent, w)
-        return tf.nn.dropout(a, keep_prob=keep_prob)
+        # a = tf.matmul(exponent, w)
+        return tf.matmul(exponent, dropout)
     else:
         return tf.matmul(exponent, w)
 
@@ -157,8 +157,8 @@ rbf = mnistDataset()
 # rbf.kmean() #Uncomment this line to get the kmeans graph, we see that the elbow is at around k=70 to k=80
 #As such, we will pick k=75 
 #Modify these numbers to answer question 3 and 4
-kcentroids = [70] 
-keep_probs = [0.5, 0.80, 1.0]
+kcentroids = [250] 
+keep_probs = [0.5, 1.0]
 kcentroid_accuracies = []
 for numCentroids in kcentroids:
     c = rbf.getCentroids(k=numCentroids)
@@ -171,7 +171,8 @@ for numCentroids in kcentroids:
         Y = tf.placeholder("float", shape=[None, output_size])
         py_x = model(X, w_h1, centroid=c, numCentroids=numCentroids,
                     b=rbf.getBetas(c), keep_prob=keep_prob, use_dropout=True)
-
+        test_pred = model(X, w_h1, centroid=c, numCentroids=numCentroids,
+                    b=rbf.getBetas(c), keep_prob=keep_prob, use_dropout=False)
         predict_op = tf.argmax(test_pred, 1)
         y_true_cls = tf.argmax(Y, dimension=1)
         batch_accuracies = tf.placeholder("float", [None])
@@ -188,7 +189,7 @@ for numCentroids in kcentroids:
         # summaries
         tf.summary.scalar('accuracy', mean_accuracy)
 
-        batchSize = 1
+        batchSize = 50
         
         k_fold_accuracy = 0
         k_acc = []
@@ -241,10 +242,10 @@ for numCentroids in kcentroids:
             sw = tf.summary.FileWriter('logs/attempt_{}/k_dropout'.format(attempt), graph=sess.graph)
             sw.add_summary(tf.Summary(value=[
                 tf.Summary.Value(tag="Mean Accuracy", simple_value=mean),
-            ]), keep_prob)
+            ]), keep_prob*100)
             sw.add_summary(tf.Summary(value=[
                 tf.Summary.Value(tag="Std", simple_value=std),
-            ]), keep_prob)
+            ]), keep_prob*100)
 
         print("K-fold cross validation accuracy: {}".format(k_fold_accuracy))
 
