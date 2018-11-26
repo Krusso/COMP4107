@@ -70,7 +70,6 @@ data, labels = load_data(dataset)
 
 for (hidden_layer1, hidden_layer2) in list([(625, 300), (400, 200)]):
     for learning in list([0.01, 0.05]):
-
         size_h1 = tf.constant(hidden_layer1, dtype=tf.int32)
         size_h2 = tf.constant(hidden_layer2, dtype=tf.int32)
         X = tf.placeholder("float", [None, data[0].size])
