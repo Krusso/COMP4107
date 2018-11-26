@@ -190,6 +190,8 @@ y = [0 for _ in range(1, 30)]
 runs = 5
 for run in range(runs):
     print("run", run)
+    np.random.shuffle(ones)
+    np.random.shuffle(fives)
     for i in range(1, 30, 1):
         print("Training on hebbian", i * 2)
         teXY = ones[:i] + fives[:i]
@@ -218,6 +220,8 @@ x = [0 for _ in range(1, 30)]
 y = [0 for _ in range(1, 30)]
 
 for run in range(runs):
+    np.random.shuffle(ones)
+    np.random.shuffle(fives)
     for i in range(1, 30, 1):
         print("Training on storkey", i * 2)
         teXY = ones[:i] + fives[:i]
