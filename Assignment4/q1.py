@@ -109,7 +109,6 @@ def cifar10(path=None):
 
 
 batch_size = 128
-test_size = 256
 
 
 def init_weights(shape):
@@ -165,6 +164,29 @@ def model2(X, p_keep_conv, p_keep_hidden):
     return pyx
 
 
+def model3(X, p_keep_conv, p_keep_hidden):
+    w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
+    w_1 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
+    w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+    w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
+
+    l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
+                                  strides=[1, 1, 1, 1], padding='SAME'))
+    l1a = tf.nn.relu(tf.nn.conv2d(l1a, w_1,  # l1a shape=(?, 32, 32, 32)
+                                  strides=[1, 1, 1, 1], padding='SAME'))
+    l1 = tf.nn.max_pool(l1a, ksize=[1, 4, 4, 1],  # l1 shape=(?, 8, 8, 32)
+                        strides=[1, 4, 4, 1], padding='SAME')
+    l1 = tf.nn.dropout(l1, p_keep_conv)
+
+    l3 = tf.reshape(l1, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
+    l3 = tf.nn.dropout(l3, p_keep_conv)
+
+    l4 = tf.nn.relu(tf.matmul(l3, w_fc))
+    l4 = tf.nn.dropout(l4, p_keep_hidden)
+
+    pyx = tf.matmul(l4, w_o)
+    return pyx
+
 trX, trY, teX, teY = cifar10(path='./tmp')
 
 X = tf.placeholder("float", [None, 32, 32, 3])
@@ -181,7 +203,7 @@ while True:
     else:
         break
 
-for py_x in list([model2(X, p_keep_conv, p_keep_hidden)]):
+for py_x in list([model3(X, p_keep_conv, p_keep_hidden)]):
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
@@ -202,23 +224,23 @@ for py_x in list([model2(X, p_keep_conv, p_keep_hidden)]):
         for i in range(15):
             training_batch = zip(range(0, len(trX), batch_size),
                                  range(batch_size, len(trX) + 1, batch_size))
+
             for start, end in training_batch:
                 sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end],
                                               p_keep_conv: 0.8, p_keep_hidden: 0.5})
 
             saver.save(sess, 'cnn/session_{}.ckpt'.format(attempt))
 
-            test_indices = np.arange(len(teX))  # Get A Test Batch
-            np.random.shuffle(test_indices)
-            test_indices = test_indices[0:test_size]
+            testing_batch = zip(range(0, len(teX), batch_size),
+                                range(batch_size, len(teX) + 1, batch_size))
 
-            # currently only doing 1 mini batch for testing
             total_accuracy = []
-            test_batch_accuracy = np.mean(np.argmax(teY[test_indices], axis=1) ==
-                              sess.run(predict_op, feed_dict={X: teX[test_indices],
-                                                              p_keep_conv: 1.0,
-                                                              p_keep_hidden: 1.0}))
-            total_accuracy.append(test_batch_accuracy)
+            for start, end in testing_batch:
+                test_batch_accuracy = np.mean(np.argmax(teY[start:end], axis=1) ==
+                                              sess.run(predict_op, feed_dict={X: teX[start:end],
+                                                                              p_keep_conv: 1.0,
+                                                                              p_keep_hidden: 1.0}))
+                total_accuracy.append(test_batch_accuracy)
 
             test_accuracy_summary, m_accuracy = sess.run([merged, mean_accuracy],
                                                          feed_dict={batch_accuracies: total_accuracy})
