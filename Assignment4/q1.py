@@ -187,6 +187,13 @@ def model3(X, p_keep_conv, p_keep_hidden):
     pyx = tf.matmul(l4, w_o)
     return pyx
 
+
+def model4(X, p_keep_conv, p_keep_hidden):
+    return None
+
+def model5(X, p_keep_conv, p_keep_hidden):
+    return None
+
 trX, trY, teX, teY = cifar10(path='./tmp')
 
 X = tf.placeholder("float", [None, 32, 32, 3])
