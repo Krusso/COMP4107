@@ -166,6 +166,7 @@ def model2(X, p_keep_conv, p_keep_hidden):
 
 def model3(X, p_keep_conv, p_keep_hidden):
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights", w)
     w_1 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
     w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
@@ -191,8 +192,10 @@ def model3(X, p_keep_conv, p_keep_hidden):
 def model4(X, p_keep_conv, p_keep_hidden):
     return None
 
+
 def model5(X, p_keep_conv, p_keep_hidden):
     return None
+
 
 trX, trY, teX, teY = cifar10(path='./tmp')
 
