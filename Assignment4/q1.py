@@ -117,8 +117,11 @@ def init_weights(shape):
 
 def model1(X, p_keep_conv, p_keep_hidden):
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
     w_fc = init_weights([32 * 16 * 16, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
+    tf.summary.histogram("weights of 10 neuron output layer", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -138,9 +141,13 @@ def model1(X, p_keep_conv, p_keep_hidden):
 
 def model2(X, p_keep_conv, p_keep_hidden):
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
     w_1 = init_weights([3, 3, 32, 32])  # 3x3x32 conv, 32 outputs
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32", w_1)
     w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
+    tf.summary.histogram("weights of 10 neuron output layer", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -166,13 +173,19 @@ def model2(X, p_keep_conv, p_keep_hidden):
 
 def model3(X, p_keep_conv, p_keep_hidden):
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights", w)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
     w_1 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32", w_1)
     w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
+    tf.summary.histogram("weights of 10 neuron output layer", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
+
+    tf.summary.image(l1a)
+
     l1a = tf.nn.relu(tf.nn.conv2d(l1a, w_1,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
     l1 = tf.nn.max_pool(l1a, ksize=[1, 4, 4, 1],  # l1 shape=(?, 8, 8, 32)
@@ -213,7 +226,7 @@ while True:
     else:
         break
 
-for py_x in list([model3(X, p_keep_conv, p_keep_hidden)]):
+for name, py_x in list(("model 3", [model3(X, p_keep_conv, p_keep_hidden)])):
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
@@ -226,7 +239,7 @@ for py_x in list([model3(X, p_keep_conv, p_keep_hidden)]):
     with tf.Session() as sess:
         saver = tf.train.Saver()
         merged = tf.summary.merge_all()
-        result_dir = './logs/attempt_{}/'.format(attempt)
+        result_dir = './logs/attempt_{}/model_{}'.format(attempt, name)
         summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
         # you need to initialize all variables
         tf.global_variables_initializer().run()
@@ -239,7 +252,7 @@ for py_x in list([model3(X, p_keep_conv, p_keep_hidden)]):
                 sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end],
                                               p_keep_conv: 0.8, p_keep_hidden: 0.5})
 
-            saver.save(sess, 'cnn/session_{}.ckpt'.format(attempt))
+            saver.save(sess, 'cnn/session_{}/model_{}.ckpt'.format(attempt, name))
 
             testing_batch = zip(range(0, len(teX), batch_size),
                                 range(batch_size, len(teX) + 1, batch_size))
