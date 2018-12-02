@@ -4,3 +4,6 @@ Assignment2/mlp
 Assignment3/logs
 Assignment3/MNIST_data
 .cache
+Assignment4/cnn/
+Assignment4/logs/
+Assignment4/tmp/
