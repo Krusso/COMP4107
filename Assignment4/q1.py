@@ -347,20 +347,21 @@ def visualize_activation_layer(summary_name, layer, l, w, channels):
 
 batch_size = 128
 trX, trY, teX, teY = cifar10(path='./tmp')
-for i in range(4):
-    img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
-    plt.show()
-    img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='bicubic')
-    print(trX[i])
-    plt.show()
-    print(trY[i])
-    print(trX[i].shape)
+# for i in range(4):
+#     img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
+#     plt.show()
+#     img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='bicubic')
+#     print(trX[i])
+#     plt.show()
+#     print(trY[i])
+#     print(trX[i].shape)
     
 
 X = tf.placeholder("float", [batch_size, 32, 32, 3], name='image')
 Y = tf.placeholder("float", [None, 10], name='label')
 
-tf.summary.image('Input Image', X)
+tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
+# tf.summary.image('Input Image Other', toimage(tf.reshape(X, [batch_size, 3, 32, 32])))
 
 p_keep_conv = tf.placeholder("float")
 p_keep_hidden = tf.placeholder("float")
@@ -373,7 +374,7 @@ while True:
     else:
         break
 
-for name, py_x in list([("model 4", model4(X, p_keep_conv, p_keep_hidden))]):
+for name, py_x in list([("model 1", model1(X, p_keep_conv, p_keep_hidden))]):
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
