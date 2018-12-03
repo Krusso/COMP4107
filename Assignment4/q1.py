@@ -278,7 +278,7 @@ def model4(X, p_keep_conv, p_keep_hidden):
                                   strides=[1, 1, 1, 1], padding='SAME'))
     
 # # Visualize the activation patch
-#     V = tf.slice(l1a, (0, 0, 0, 0), (1, -1, -1, -1), name='slice_first_input')
+    V = tf.slice(l1a, (0, 0, 0, 0), (1, -1, -1, -1), name='slice_first_input')
 #     V = tf.reshape(V, (32, 32, 32))
 
 #     # Reorder so the channels are in the first dimension, x and y follow.
@@ -286,13 +286,13 @@ def model4(X, p_keep_conv, p_keep_hidden):
 #     # Bring into shape expected by image_summary
 #     V = tf.reshape(V, (-1, 32, 32, 1))
 
-
+    V = put_kernels_on_grid(V)
+    tf.summary.image("Layer 1 Activation", V)
 
     l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
                         strides=[1, 1, 1, 1], padding='VALID')
     
-    # V = put_kernels_on_grid(l1)
-    # tf.summary.image("Layer 1 Activation", V)
+
 
     l1 = tf.nn.dropout(l1, p_keep_conv)
 
@@ -315,9 +315,12 @@ def model5(X, p_keep_conv, p_keep_hidden):
     tf.summary.histogram("weights of 10 neuron output layer", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
-                                  strides=[1, 1, 1, 1], padding='SAME'))
+                                strides=[1, 1, 1, 1], padding='SAME'))
 
-    
+    # V = tf.slice(l1a, (0, 0, 0, 0), (1, -1, -1, -1), name='slice_first_input')
+    # print('SHAPE of V: ', V.shape)
+    # V = put_kernels_on_grid(V)
+    # tf.summary.image("Layer 1 Activation", V)
     # activation_summary = tf.contrib.layers.summarize_activation(l1a)
 
     l1 = tf.nn.max_pool(l1a, ksize=[1, 4, 4, 1],  # l1 shape=(?, 16, 16, 32)
@@ -331,7 +334,7 @@ def model5(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx
 
 
 def visualize_activation_layer(summary_name, layer, l, w, channels):
@@ -357,11 +360,13 @@ trX, trY, teX, teY = cifar10(path='./tmp')
 #     print(trX[i].shape)
     
 
-X = tf.placeholder("float", [batch_size, 32, 32, 3], name='image')
+X = tf.placeholder("float", [None, 32, 32, 3], name='image')
 Y = tf.placeholder("float", [None, 10], name='label')
 
 tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
 # tf.summary.image('Input Image Other', toimage(tf.reshape(X, [batch_size, 3, 32, 32])))
+
+feature_map_image = tf.placeholder("float", [None, 32, 32, 1])
 
 p_keep_conv = tf.placeholder("float")
 p_keep_hidden = tf.placeholder("float")
@@ -374,7 +379,9 @@ while True:
     else:
         break
 
-for name, py_x in list([("model 1", model1(X, p_keep_conv, p_keep_hidden))]):
+for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
+    l1a, py_x = model
+
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
@@ -389,12 +396,14 @@ for name, py_x in list([("model 1", model1(X, p_keep_conv, p_keep_hidden))]):
         
         testing_accuracy = tf.summary.scalar('accuracy', mean_accuracy)
         merged_testing_accuracy = tf.summary.merge([testing_accuracy])
-        # image_summary = tf.summary.image("image", X, max_outputs = 9)
-        # merged_image = tf.summary.merge([image_summary])
+        image_summary = tf.summary.image("image", X, max_outputs = 9)
+        merged_image = tf.summary.merge([image_summary])
 
         result_dir = './logs/attempt_{}/{}'.format(attempt, name)
         summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
         
+        feature_map_summary = tf.summary.image("layer 1 activation map", feature_map_image, max_outputs = 9)
+        feature_map_merged = tf.summary.merge([feature_map_summary])
 
         # you need to initialize all variables
         tf.global_variables_initializer().run()
@@ -417,9 +426,33 @@ for name, py_x in list([("model 1", model1(X, p_keep_conv, p_keep_hidden))]):
 
                 summary, _ = sess.run([merged, train_op], feed_dict={X: trX[start:end], Y: trY[start:end],
                                               p_keep_conv: 0.8, p_keep_hidden: 0.5})
+
+                #visualize feature maps for one image after a training epoch
+                filteredImage = sess.run(l1a, feed_dict={X: trX[0].reshape(1,32,32,3), p_keep_conv: 1.0, p_keep_hidden: 1.0}) #(1,32,32,64)
+                
+                print("filtered image shape:", filteredImage.shape[3])
+                print(tf.size(filteredImage))
+# tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
+                filteredImage = sess.run(tf.transpose(filteredImage, (3,2,1,0))) #(64,32,32,1)
+                print(filteredImage.shape)
+                # filteredImage = sess.run(tf.transpose(tf.reshape(filteredImage, shape=[64, 1, 32, 32]), perm=[0, 3, 2, 1]))
+                # filteredImage = sess.run(tf.transpose(filteredImage, (0,3,1,2)))
+                # filteredImage = tf.reshape(filteredImage, (64,32,32,1))
+                print(filteredImage.shape)
+                fm_summary = sess.run(feature_map_summary, feed_dict={feature_map_image: filteredImage})
+                summary_writer.add_summary(fm_summary)
+                # for i in range(filteredImage.shape[3]):
+                #     img1 = filteredImage[:,:,:,i]
+                #     print(img1.shape)
+                #     plt.imshow(filteredImage[:,:,:,i].reshape(32,32))
+                #     plt.show()
                 
             summary_writer.add_summary(summary)#just add the last batch of images
+
             
+
+
+
             saver.save(sess, './logs/attempt_{}/model_checkpoint/model_{}.ckpt'.format(attempt, name))
 
             testing_batch = zip(range(0, len(teX), batch_size),
