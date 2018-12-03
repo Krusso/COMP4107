@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 from minisom import MiniSom
 from random import shuffle
@@ -20,7 +19,8 @@ def get_data():
     for x in range(len(x_train)):
             if y_train[x] == 1 or y_train[x] == 5:
                     dataset.append((x_train[x].reshape([1, 784]), y_train[x]))
-            shuffle(dataset)
+
+    shuffle(dataset)
     return dataset  
 
 
@@ -31,24 +31,21 @@ def plot_som(title, som):
         image, label = item
         i, j = som.winner(image)
         plt.text(i, j, str(int(label)), color=plt.cm.Dark2(label / 5.), fontdict={'size': 12})
-    plt.axis([0, x_dim, 0, y_dim])
+    plt.axis([0, 20, 0, 20])
     plt.title(title)
     plt.show()
 
 
 #Part a)
 dataset = get_data()
-x_dim = 20
-y_dim = 20
-input_size = 784
-sigma = .9
-lr = .25
 
-som = MiniSom(x_dim, y_dim, input_size, sigma=sigma, learning_rate=lr)
-plot_som('SOM - before training', som)
-epochs = 1500
-som.train_random([i[0][0] for i in dataset], epochs)
-plot_som('SOM - after training %s epochs' % epochs, som)
+print("Showing som before training")
+som = MiniSom(20, 20, 784, sigma=.9, learning_rate=.25)
+plot_som('SOM before training', som)
+print("training som")
+som.train_random([i[0][0] for i in dataset], 5000)
+print("Showing som after training")
+plot_som('SOM after training %s epochs' % 5000, som)
 
 # Part b)
 for k in [2, 4, 6, 8, 10, 12, 14, 16, 18]:
@@ -57,31 +54,29 @@ for k in [2, 4, 6, 8, 10, 12, 14, 16, 18]:
     kmeans = KMeans(n_clusters=k)
     kmeans.fit(pca)
 
-    plt.figure(figsize=(5, 5))
-
     x_min, x_max = pca[:, 0].min() - 1, pca[:, 0].max() + 1
     y_min, y_max = pca[:, 1].min() - 1, pca[:, 1].max() + 1
 
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, .1), np.arange(y_min, y_max, .1))
-    bounds = [xx.min(), xx.max(), yy.min(), yy.max()]
-    predictions = kmeans.predict(np.vstack((xx.flatten(), yy.flatten())).T)
+    x1, y1 = np.meshgrid(np.linspace(x_min, x_max, (x_max - x_min)/.1),
+                         np.linspace(y_min, y_max, (x_max - x_min)/.1))
+    bounds = [x1.min(), x1.max(), y1.min(), y1.max()]
+    predictions = kmeans.predict(np.vstack((x1.flatten(), y1.flatten())).T)
 
-    plt.imshow(predictions.reshape(xx.shape), extent=bounds, cmap=plt.cm.Dark2, origin='lower')
+    # plot regions
+    plt.imshow(predictions.reshape(x1.shape), extent=bounds, origin='lower')
 
     legend = []
     # https://en.wikipedia.org/wiki/Voronoi_diagram
+    # plot mnist data
     for label, color in [(1, 'purple'), (5, 'blue')]:
         a = np.array([pca[i] for i in range(len(dataset)) if dataset[i][1] != label])
-        plt.plot(a[:, 0], a[:, 1], 'k.', markersize=10, color=color)
-        legend.append(patches.Patch(color=color, label=str(label)))
+        plt.plot(a[:, 0], a[:, 1], 'ro', markersize=2, color=color, label=str(label))
 
-    centroids = kmeans.cluster_centers_
-    plt.scatter(centroids[:, 0], centroids[:, 1], s=1, color='w', zorder=10, marker='*', linewidth=10)
+    # plot white centroids on top of everything else
+    plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], color='w', zorder=100)
 
-    plt.title('K-means Clustering on PCA Reduced Mnist')
-    plt.legend(handles=legend)
-    plt.xticks([])
-    plt.yticks([])
+    plt.title('K-means visualized using PCA')
+    plt.legend()
     plt.xlim(x_min, x_max)
     plt.ylim(y_min, y_max)
     plt.show()

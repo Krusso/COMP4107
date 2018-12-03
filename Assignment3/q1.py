@@ -43,7 +43,7 @@ class network(object):
 
         np.fill_diagonal(self.W, 0)
 
-    def activate(self, vector):
+    def stabilize(self, vector):
         changed = True
 
         while changed:
@@ -52,10 +52,8 @@ class network(object):
             np.random.shuffle(indices)
 
             new_vector = np.copy(vector)
-
             for i in range(0, len(vector)):
                 neuron_index = indices.pop()
-
                 s = np.dot(new_vector, self.W[neuron_index])
 
                 if s > 0:
@@ -116,7 +114,7 @@ testing_set = onesTest[0:200] + fivesTest[0:200]
 np.random.shuffle(testing_set)
 
 
-def plot_accuracy(x, y, title):
+def plot(x, y, title):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(x, y)
@@ -141,11 +139,11 @@ def show(img, title='', suptitle=''):
     plt.show()
 
 
-def test(network, index, item, ones, fives, sup, plot=False):
-    # Measures classification accuracy by diff the activated image vector
+def test(network, index, item, ones, fives, suptitle, plot=False):
+
     image = np.array(item[0]).reshape(28, 28)
 
-    result = np.array(network.activate(item[0]))
+    result = np.array(network.stabilize(item[0]))
 
     label = item[1]
 
@@ -177,8 +175,8 @@ def test(network, index, item, ones, fives, sup, plot=False):
             winning_label = j[1]
 
     if plot:
-        subshow(image, "Original %s" % index, sup)
-        subshow(result.reshape(28, 28), "After %s" % index, sup)
+        subshow(image, "Original %s" % index, suptitle)
+        subshow(result.reshape(28, 28), "After %s" % index, suptitle)
         print("winning label", winning_label)
         plt.show()
 
@@ -192,31 +190,29 @@ y = [0 for _ in range(1, 30)]
 runs = 5
 for run in range(runs):
     print("run", run)
+    np.random.shuffle(ones)
+    np.random.shuffle(fives)
     for i in range(1, 30, 1):
         print("Training on hebbian", i * 2)
-        training_set = ones[:i] + fives[:i]
+        teXY = ones[:i] + fives[:i]
 
-        np.random.shuffle(training_set)
+        np.random.shuffle(teXY)
 
-        hf_hebbian = hf_hebbian = network(
-            train_dataset=training_set,
-            mode='hebbian'
-        )
+        hebbian = network(train_dataset=teXY, mode='hebbian')
 
         hebb_acc = 0.
         for index, image in enumerate(testing_set):
-            norm = test(hf_hebbian, index, image, ones[:i], fives[:i],
-                        "Mode=Hebbian", plot=False)
+            norm = test(hebbian, index, image, ones[:i], fives[:i],
+                        "hebbian", plot=False)
             hebb_acc += norm
 
         x[i - 1] += i * 2
         y[i - 1] += hebb_acc / len(testing_set)
 
-        print("hebbian accuracy", hebb_acc, "size", len(testing_set))
-        print("Hebbian accuracy trained with {} samples: accuracy {}".format(i * 2, (hebb_acc / len(testing_set))))
+        print("hebbian accuracy training samples", i * 2, "accuracy", (hebb_acc / len(testing_set)))
 
 
-plot_accuracy(np.divide(x, runs), np.divide(y, runs), "Accuracy vs training samples")
+plot(np.divide(x, runs), np.divide(y, runs), "Accuracy vs training samples")
 
 # storkey
 
@@ -224,25 +220,24 @@ x = [0 for _ in range(1, 30)]
 y = [0 for _ in range(1, 30)]
 
 for run in range(runs):
+    np.random.shuffle(ones)
+    np.random.shuffle(fives)
     for i in range(1, 30, 1):
         print("Training on storkey", i * 2)
-        training_set_sto = ones[:i] + fives[:i]
-        np.random.shuffle(training_set_sto)
-        hf_storkey = network(
-            train_dataset=training_set_sto,
-            mode='storkey'
-        )
+        teXY = ones[:i] + fives[:i]
+        np.random.shuffle(teXY)
+        storkey = network(train_dataset=teXY, mode='storkey')
 
         ac = 0.
         print("starting")
         for index, image in enumerate(testing_set):
-            norm = test(hf_storkey, index, image, ones[:i], fives[:i],
-                        "Mode=storkey", plot=False)
+            norm = test(storkey, index, image, ones[:i], fives[:i],
+                        "storkey", plot=False)
             ac += norm
 
         x[i - 1] += i * 2
         y[i - 1] += ac / len(testing_set)
 
-        print("Storkey accuracy trained with {} samples: {}".format(i * 2, (ac / len(testing_set))))
+        print("storkey accuracy training samples", i * 2, "accuracy", (ac / len(testing_set)))
 
-plot_accuracy(np.divide(x, runs), np.divide(y, runs), "Storkey Accuracy vs training samples")
+plot(np.divide(x, runs), np.divide(y, runs), "Storkey Accuracy vs training samples")

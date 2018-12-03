@@ -8,8 +8,7 @@ from sklearn.datasets import fetch_lfw_people
 
 
 def init_weights(s1, s2):
-    sigma = math.sqrt(2) * math.sqrt(2 / (s1 + s2))
-    return tf.Variable(tf.random_normal([s1, s2], stddev=sigma))
+    return tf.Variable(tf.random_normal([s1, s2], stddev=math.sqrt(2) * math.sqrt(2 / (s1 + s2))))
 
 
 def model(X, w_h1, w_h2, w_o):
@@ -71,7 +70,6 @@ data, labels = load_data(dataset)
 
 for (hidden_layer1, hidden_layer2) in list([(625, 300), (400, 200)]):
     for learning in list([0.01, 0.05]):
-
         size_h1 = tf.constant(hidden_layer1, dtype=tf.int32)
         size_h2 = tf.constant(hidden_layer2, dtype=tf.int32)
         X = tf.placeholder("float", [None, data[0].size])
