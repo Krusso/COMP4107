@@ -99,8 +99,8 @@ def cifar10(path=None):
     images = pixels.reshape(-1, 32, 32, 3).astype('float32') / 255
 
     # Split into train and test
-    train_images, test_images = images[:50000], images[50000:]
-    train_labels, test_labels = labels[:50000], labels[50000:]
+    train_images, test_images = images[:1000], images[1000:2000]
+    train_labels, test_labels = labels[:1000], labels[1000:2000]
 
     def _onehot(integer_labels):
         """Return matrix whose rows are onehot encodings of integers."""
@@ -291,8 +291,8 @@ def model4(X, p_keep_conv, p_keep_hidden):
     l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
                         strides=[1, 1, 1, 1], padding='VALID')
     
-    # V = put_kernels_on_grid(l1)
-    # tf.summary.image("Layer 1 Activation", V)
+    V = put_kernels_on_grid(l1)
+    tf.summary.image("Layer 1 Activation", V)
 
     l1 = tf.nn.dropout(l1, p_keep_conv)
 
@@ -374,7 +374,7 @@ while True:
     else:
         break
 
-for name, py_x in list([("model 1", model1(X, p_keep_conv, p_keep_hidden))]):
+for name, py_x in list([("model 4", model4(X, p_keep_conv, p_keep_hidden))]):
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
