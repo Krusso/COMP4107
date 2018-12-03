@@ -3,6 +3,7 @@ import numpy as np
 import os
 import tarfile
 from urllib.request import urlretrieve
+from scipy.misc import toimage
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -165,6 +166,7 @@ def put_kernels_on_grid (kernel, pad = 1):
 
     # scaling to [0, 255] is not necessary for tensorboard
     return x
+
 
 def init_weights(shape):
     return tf.Variable(tf.random_normal(shape, stddev=0.01))
@@ -331,6 +333,7 @@ def model5(X, p_keep_conv, p_keep_hidden):
     pyx = tf.matmul(l4, w_o)
     return pyx
 
+
 def visualize_activation_layer(summary_name, layer, l, w, channels):
     V = tf.slice(layer, (0, 0, 0, 0), (1, -1, -1, -1), name='slice_first_input') #todo: need to get top 9 patches some how
     V = tf.reshape(V, (32, 32, 32))
@@ -341,15 +344,17 @@ def visualize_activation_layer(summary_name, layer, l, w, channels):
     V = tf.reshape(V, (-1, 32, 32, 1))
     tf.summary.image(name, V)
 
+
 batch_size = 128
 trX, trY, teX, teY = cifar10(path='./tmp')
-# for i in range(4):
-#     img = plt.imshow(trX[i])
-#     print(trX[i])
-#     plt.show()
-
-#     print(trY[i])
-#     print(trX[i].shape)
+for i in range(4):
+    img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
+    plt.show()
+    img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='bicubic')
+    print(trX[i])
+    plt.show()
+    print(trY[i])
+    print(trX[i].shape)
     
 
 X = tf.placeholder("float", [batch_size, 32, 32, 3], name='image')
