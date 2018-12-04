@@ -100,8 +100,8 @@ def cifar10(path=None):
     images = pixels.reshape(-1, 32, 32, 3).astype('float32') / 255
 
     # Split into train and test
-    train_images, test_images = images[:50000], images[50000:]
-    train_labels, test_labels = labels[:50000], labels[50000:]
+    train_images, test_images = images[:1000], images[1000:2000]
+    train_labels, test_labels = labels[:1000], labels[1000:2000]
 
     def _onehot(integer_labels):
         """Return matrix whose rows are onehot encodings of integers."""
@@ -308,7 +308,6 @@ def model4(X, p_keep_conv, p_keep_hidden):
 
     l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
                         strides=[1, 1, 1, 1], padding='VALID')
-    
 
 
     l1 = tf.nn.dropout(l1, p_keep_conv)
@@ -321,7 +320,7 @@ def model4(X, p_keep_conv, p_keep_hidden):
 
     pyx = tf.matmul(l4, w_o)
     return pyx
-
+tf.extract_image_patches
 
 def model5(X, p_keep_conv, p_keep_hidden):
     w = init_weights([3, 3, 3, 64])  # 3x3x3 conv, 32 outputs
@@ -416,6 +415,7 @@ while True:
     else:
         break
 
+
 for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
     l1a, py_x = model
 
@@ -439,7 +439,7 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
         result_dir = './logs/attempt_{}/{}'.format(attempt, name)
         summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
         
-        feature_map_summary = tf.summary.image("layer 1 activation map", feature_map_image, max_outputs = 9)
+        feature_map_summary = tf.summary.image("layer 1 activation map", feature_map_image, max_outputs=9)
         feature_map_merged = tf.summary.merge([feature_map_summary])
 
         # you need to initialize all variables
@@ -544,8 +544,6 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
         #         #     plt.show()
                 
         #     summary_writer.add_summary(summary)#just add the last batch of images
-
-            
 
 
 
