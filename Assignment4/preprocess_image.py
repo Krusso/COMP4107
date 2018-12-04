@@ -23,11 +23,6 @@ DATA_DIR = './tmp'
 # architecture will change and any model would need to be retrained.
 IMAGE_SIZE = 32
 
-# Global constants describing the CIFAR-10 data set.
-NUM_CLASSES = 10
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10000
-
 
 def cifar10(path=None):
     # https://mattpetersen.github.io/load-cifar10-with-numpy
@@ -235,6 +230,7 @@ def modify_image(trX, trY):
         #                trX[i].transpose(1, 2, 0))).transpose(2, 0, 1)
 
         d_img = np.rot90(trX[i].transpose(1, 2, 0), 1).transpose(2, 0, 1)
+        print("shape", d_img.shape)
         distorted.append(d_img)
 
         # print(d_img.shape)

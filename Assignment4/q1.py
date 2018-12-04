@@ -3,21 +3,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import toimage
+import random
 
 # https://www.tensorflow.org/tutorials/images/deep_cnn
 # https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10/
 DATA_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
 DATA_DIR = './tmp'
-
-# Process images of this size. Note that this differs from the original CIFAR
-# image size of 32 x 32. If one alters this number, then the entire model
-# architecture will change and any model would need to be retrained.
-IMAGE_SIZE = 32
-
-# Global constants describing the CIFAR-10 data set.
-NUM_CLASSES = 10
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10000
 
 
 def parse_example(example):
@@ -54,14 +45,9 @@ def model1(X, p_keep_conv, p_keep_hidden):
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
-     
-
-
 
     l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
                         strides=[1, 2, 2, 1], padding='SAME')
-
-    # tf.summary.image('Layer 1 Max Pool', l1)
 
     l1 = tf.nn.dropout(l1, p_keep_conv)
 
@@ -72,7 +58,7 @@ def model1(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model2(X, p_keep_conv, p_keep_hidden):
@@ -104,7 +90,7 @@ def model2(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model3(X, p_keep_conv, p_keep_hidden):
@@ -120,8 +106,6 @@ def model3(X, p_keep_conv, p_keep_hidden):
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
 
-    #tf.summary.image('layer 1', l1a)
-
     l1a = tf.nn.relu(tf.nn.conv2d(l1a, w_1,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
     l1 = tf.nn.max_pool(l1a, ksize=[1, 4, 4, 1],  # l1 shape=(?, 8, 8, 32)
@@ -135,7 +119,7 @@ def model3(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model4(X, p_keep_conv, p_keep_hidden):
@@ -162,7 +146,7 @@ def model4(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model5(X, p_keep_conv, p_keep_hidden):
@@ -187,7 +171,7 @@ def model5(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return l1a, pyx
+    return l1a, pyx, 64
 
 
 batch_size = 128
@@ -213,8 +197,6 @@ test_init_op = test_iterator.initializer
 X = tf.placeholder("float", [None, 32, 32, 3], name='image')
 Y = tf.placeholder("float", [None, 10], name='label')
 
-# tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
-
 feature_map_image = tf.placeholder("float", [None, 32, 32, 1])
 
 p_keep_conv = tf.placeholder("float")
@@ -230,7 +212,7 @@ while True:
 
 
 for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
-    l1a, py_x = model
+    l1a, py_x, features = model
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
@@ -300,31 +282,57 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
             from heapq import heappush, heappushpop
 
             heap = []
+            indices = [i for i in range(features)]
+            indices = random.sample(indices, min(9, features))
+
             for image, label in zip(images, labels):
                 fm = sess.run(l1a, feed_dict={X: [image]})
-                if len(heap) < 9:
-                    heappush(heap, (np.linalg.norm(fm[0]), image, fm[0]))
-                else:
-                    heappushpop(heap, (np.linalg.norm(fm[0]), image, fm[0]))
+                fm = fm.transpose(3, 1, 2, 0)
+
+                for index in indices:
+                    if len(heap) < 9:
+                        heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                    else:
+                        heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
 
             top9 = sorted(heap, reverse=True)
-            print("attempt", attempt)
-            for distance, image, fm in top9:
-                print(tf.shape(image))
-                print(tf.shape(image[0]))
-                print(tf.shape(image[0][0]))
-                print("All", np.shape(np.array([image])))
 
-                summary_op = tf.summary.image("model_projections",
-                                              np.array([image]),
-                                              max_outputs=1, family='normally')
-                # Summary has to be evaluated (converted into a string) before adding to the writer
-                summary_writer.add_summary(summary_op.eval(), 10)
+            fmc = 0
 
-                img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
-                plt.show()
-                #summary_writer.add_summary(tf.summary.image('Image', image), image)
-                #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
+            for distance, image, fm, index in top9:
+                fmc += 1
+                summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
+                                              format(fmc, index),
+                                              np.array([image.reshape(3, 32, 32).transpose(1, 2, 0)]),
+                                              max_outputs=1, family="image")
+
+                summary_writer.add_summary(summary_op.eval(), epoch)
+
+                summary_op = tf.summary.image("#{} highest activation for feature map #{}"
+                                              .format(fmc, index),
+                                              np.array([fm]),
+                                              max_outputs=1, family='feature_map')
+
+                summary_writer.add_summary(summary_op.eval(), epoch)
+
+                cmap = plt.get_cmap('jet')
+                rgba_img = cmap(fm.reshape(32, 32))
+
+                rgb = np.delete(rgba_img, 3, 2)
+
+                summary_op = tf.summary.image("#{} highest activation for feature heatmap #{}"
+                                              .format(fmc, index),
+                                              np.array([rgb]),
+                                              max_outputs=1, family='feature_map')
+
+                summary_writer.add_summary(summary_op.eval(), epoch)
+
+
+
+                # img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
+                # plt.show()
+                # #summary_writer.add_summary(tf.summary.image('Image', image), image)
+                # #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
 
             summary_writer.flush()
 
