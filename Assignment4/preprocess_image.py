@@ -139,81 +139,31 @@ def _write_example(image, label):
                 }))
     return example
 
-
-
-def _read_and_write_images(dir):
-    train_file = os.path.join(FLAGS.result_dir, 'train_medical_{}.tfrecords'.format(FLAGS.image_size))
-    val_file = os.path.join(FLAGS.result_dir, 'val_medical_{}.tfrecords'.format(FLAGS.image_size))
-    test_file = os.path.join(FLAGS.result_dir, 'test_medical_{}.tfrecords'.format(FLAGS.image_size))
-    
-    #Split the examples into train/validation so that each
-    #array has an equal distribution of all the classes
-    train_set = []
-    validation_set = []
-    test_set = []
-    for subdir, dirs, files in os.walk(dir):
-        if not dirs:
-            className = subdir.split("/")[-1]
-            np.random.shuffle(files)
-            val_index = int(FLAGS.val_size * len(files))
-            test_index = int(FLAGS.test_size * len(files) + val_index)
-            print("Reading and writing {} images...".format(className))
-            for i in range(len(files)):
-                image = cv2.imread(subdir + "/"+ files[i], cv2.IMREAD_GRAYSCALE)
-                image = cv2.resize(image, (FLAGS.image_size, FLAGS.image_size), 0 ,0, cv2.INTER_AREA)
-                image = image.astype(np.float32)
-                image = np.multiply(image, 1.0/255.0)
-                
-                if i<val_index:
-                    example = _write_example(image, category_dict[className])
-                    validation_set.append(example)
-                elif i<test_index:
-                    example = _write_example(image, category_dict[className])
-                    test_set.append(example)
-                else:
-                    aug_images = _augment_image(image)
-                    for img in aug_images:
-                        example = _write_example(img, category_dict[className])
-                        train_set.append(example)
-
-    print("Shuffle examples")
-    np.random.shuffle(train_set)
-    np.random.shuffle(validation_set)
-    np.random.shuffle(test_set)
-    
-    with tf.python_io.TFRecordWriter(val_file) as writer:
-        for example in validation_set:
-            writer.write(example.SerializeToString())
-    
-    with tf.python_io.TFRecordWriter(train_file) as writer:
-        for example in train_set:
-            writer.write(example.SerializeToString())
-            
-    with tf.python_io.TFRecordWriter(test_file) as writer:
-        for example in test_set:
-            writer.write(example.SerializeToString())      
-    print("size of train: {} \nsize of val: {}\nsize of test: {}".format(len(train_set),len(validation_set), len(test_set)))
-###
 def modify_image(trX, trY):
     #Distort the images
     # with tf.Session() as sess:
         #for each image, we add one distortion
     distorted = []
     labels = []
-    #for each image we rotate 90 degrees 
+    from scipy import ndimage
+    sess = tf.InteractiveSession()
+    #for each image we rotate 90 degrees
     for i in range(len(trX)):
-        d_img = np.rot90(trX[i], 1)
+        d_img = np.reshape(trX[i], )
+        d_img = np.rot90(trX[i], 2, axes=(1,2))
+
+        print(np.shape(d_img))
         distorted.append(d_img)
-        # img = plt.imshow(distorted)
-        # plt.show()
-        # img = plt.imshow(trX[i])
-        # plt.show()
-        # break
+        from scipy.misc import toimage
+        # img = plt.imshow(toimage(sess.run( tf.transpose(tf.reshape(d_img, shape=[3,32,32]), perm=[1,2,0] )    ) ), interpolation='nearest')
+        img = plt.imshow(toimage(d_img.reshape(3, 32, 32)), interpolation='nearest')
+        plt.show()
+        img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
+        plt.show()
     distorted.extend(trX)
     labels.extend(trY)
     labels.extend(trY)
     return shuffle(distorted, labels)
-
 
 DISTORTED_IMAGE_DIR = ".\distorted_images"
 if not os.path.exists(DISTORTED_IMAGE_DIR):
