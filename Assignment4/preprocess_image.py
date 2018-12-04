@@ -99,7 +99,7 @@ def cifar10(path=None):
 
     # Pixels are everything remaining after we delete the labels
     pixels = np.delete(buffr, np.arange(0, buffr.size, 3073))
-    images = pixels.reshape(-1, 32, 32, 3).astype('float32') / 255
+    images = pixels.reshape(-1, 3, 32, 32).astype('float32') / 255
 
     # Split into train and test
     train_images, test_images = images[:50000], images[50000:]
@@ -194,21 +194,55 @@ def _read_and_write_images(dir):
             writer.write(example.SerializeToString())      
     print("size of train: {} \nsize of val: {}\nsize of test: {}".format(len(train_set),len(validation_set), len(test_set)))
 ###
+# def modify_image(trX, trY):
+#     #Distort the images
+#     # with tf.Session() as sess:
+#         #for each image, we add one distortion
+#     distorted = []
+#     labels = []
+#
+#     sess = tf.InteractiveSession()
+#     #for each image we rotate 90 degrees
+#     for i in range(len(trX)):
+#         d_img = np.rotate
+#         #d_img = sess.run(tf.image.random_flip_up_down(
+# #            trX[i].reshape(3, 32, 32).transpose(1, 2, 0)))
+#         print(np.shape(d_img))
+#         distorted.append(d_img)
+#         from scipy.misc import toimage
+#         img = plt.imshow(toimage(sess.run(tf.reshape(d_img, shape=[3, 32, 32])).transpose([1, 2, 0])), interpolation='nearest')
+#         plt.show()
+#         img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
+#         plt.show()
+#     distorted.extend(trX)
+#     labels.extend(trY)
+#     labels.extend(trY)
+#     return shuffle(distorted, labels)
+
+
 def modify_image(trX, trY):
     #Distort the images
     # with tf.Session() as sess:
         #for each image, we add one distortion
     distorted = []
     labels = []
-    #for each image we rotate 90 degrees 
+    #for each image we rotate 90 degrees
     for i in range(len(trX)):
-        d_img = np.rot90(trX[i], 1)
+        #if i % 1000 == 0:
+        print("on image", i)
+
+        #d_img = sess.run(tf.image.random_flip_left_right(
+        #                trX[i].transpose(1, 2, 0))).transpose(2, 0, 1)
+
+        d_img = np.rot90(trX[i].transpose(1, 2, 0), 1).transpose(2, 0, 1)
         distorted.append(d_img)
-        # img = plt.imshow(distorted)
+
+        # print(d_img.shape)
+        # img = plt.imshow(d_img.transpose(1, 2, 0))
         # plt.show()
-        # img = plt.imshow(trX[i])
+        # img = plt.imshow(trX[i].transpose(1, 2, 0))
         # plt.show()
-        # break
+        #break
     distorted.extend(trX)
     labels.extend(trY)
     labels.extend(trY)
