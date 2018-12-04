@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from sklearn.utils import shuffle
 from math import sqrt
+
 # https://www.tensorflow.org/tutorials/images/deep_cnn
 # https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10/
 DATA_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
@@ -113,7 +114,23 @@ def cifar10(path=None):
     return train_images, _onehot(train_labels), \
         test_images, _onehot(test_labels)
 
+def parse_example(example):
+    features = {'image_raw': tf.FixedLenFeature((), tf.string, default_value=""),
+                'label': tf.FixedLenFeature((), tf.int64, default_value=0)}
+    parsed_features = tf.parse_single_example(example, features)
+    
+    image = tf.decode_raw(parsed_features['image_raw'], tf.float32)
+    image = tf.reshape(image, [32, 32, 3])
+    
+    label = tf.cast(parsed_features['label'], tf.int64)
+    return image, tf.one_hot(label, 10)
 
+def input_fn(filenames, shuffle_buff=15000, batch_size=100):
+    dataset = tf.data.TFRecordDataset(filenames)
+    dataset = dataset.shuffle(shuffle_buff)
+    dataset = dataset.map(lambda example: parse_example(example))
+    dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
+    return dataset
 
 def put_kernels_on_grid (kernel, pad = 1):
 
@@ -131,8 +148,8 @@ def put_kernels_on_grid (kernel, pad = 1):
             if n % i == 0:
                 if i == 1: print('Who would enter a prime number of filters')
                 return (i, int(n / i))
-    (grid_Y, grid_X) = factorization (kernel.get_shape()[3].value)
-    print ('grid: %d = (%d, %d)' % (kernel.get_shape()[3].value, grid_Y, grid_X))
+    (grid_Y, grid_X) = factorization (kernel.shape[3])
+    print ('grid: %d = (%d, %d)' % (kernel.shape[3], grid_Y, grid_X))
 
     x_min = tf.reduce_min(kernel)
     x_max = tf.reduce_max(kernel)
@@ -322,8 +339,9 @@ def model5(X, p_keep_conv, p_keep_hidden):
     # V = put_kernels_on_grid(V)
     # tf.summary.image("Layer 1 Activation", V)
     # activation_summary = tf.contrib.layers.summarize_activation(l1a)
-
-    l1 = tf.nn.max_pool(l1a, ksize=[1, 4, 4, 1],  # l1 shape=(?, 16, 16, 32)
+    deconvl1 = tf.nn.conv2d_transpose(l1a, w, output_shape=[64,32,32,3], strides=[1,1,1,1], name='Deconv1')
+    
+    l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
                         strides=[1, 2, 2, 1], padding='SAME')
     l1 = tf.nn.dropout(l1, p_keep_conv)
 
@@ -334,7 +352,8 @@ def model5(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return l1a, pyx
+    return deconvl1, pyx
+
 
 
 def visualize_activation_layer(summary_name, layer, l, w, channels):
@@ -347,9 +366,27 @@ def visualize_activation_layer(summary_name, layer, l, w, channels):
     V = tf.reshape(V, (-1, 32, 32, 1))
     tf.summary.image(name, V)
 
-
 batch_size = 128
-trX, trY, teX, teY = cifar10(path='./tmp')
+    
+train_set = input_fn(filenames=["distorted_images/train_set.tfrecords"],
+                                batch_size=batch_size)
+
+test_set = input_fn(filenames=["distorted_images/test_set.tfrecords"],
+                                batch_size=batch_size)   
+#Training iterators                            
+train_iterator = train_set.make_initializable_iterator()
+test_iterator = test_set.make_initializable_iterator()
+
+#Pipeline for feeding into the net, gets the next batch in dataset
+next_train_batch = train_iterator.get_next() 
+next_test_batch = test_iterator.get_next()
+
+#Used to reset the iterator
+train_init_op = train_iterator.initializer
+test_init_op = test_iterator.initializer
+
+
+# trX, trY, teX, teY = cifar10(path='./tmp')
 # for i in range(4):
 #     img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
 #     plt.show()
@@ -407,67 +444,126 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
 
         # you need to initialize all variables
         tf.global_variables_initializer().run()
+#############
+        for epoch in range(15):
+        
+        #Initialize the training iterator to consume training data
+            sess.run(train_init_op)    
+            while True:
+                #as long as the iterator has not hit the end, continue to consume training data
+                try:
+                    images, labels = sess.run(next_train_batch)
+                    train_summary, _ = sess.run([merged, train_op], feed_dict={ X: images,
+                                                                                Y: labels,
+                                                                                p_keep_conv: 0.8, p_keep_hidden: 0.5})
+                except tf.errors.OutOfRangeError:
+                    #end of training epoch
+                    summary_writer.add_summary(train_summary, epoch)
+                    break
+            #Initialize the validation iterator to consume validation data
+            sess.run(test_init_op)
+            total_accuracy = []
+            while True:
+                try:
+                    images, labels = sess.run(next_test_batch)
+                    test_batch_accuracy = np.mean(np.argmax(labels, axis=1) == 
+                                                    sess.run(predict_op, feed_dict={X: images,
+                                                                Y: labels, 
+                                                                p_keep_conv:1.0, 
+                                                                p_keep_hidden:1.0}))
+                    total_accuracy.append(test_batch_accuracy)
+                                                        
+                except tf.errors.OutOfRangeError:
+                    test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
+                                                feed_dict={batch_accuracies: total_accuracy})
+                    summary_writer.add_summary(test_accuracy_summary, epoch)
+                    #end of validation
+                    break
 
-        for i in range(15):
-            training_batch = zip(range(0, len(trX), batch_size),
-                                 range(batch_size, len(trX) + 1, batch_size))
+            #                     total_accuracy = []
+            # for start, end in testing_batch:
+            #     test_batch_accuracy = np.mean(np.argmax(teY[start:end], axis=1) ==
+            #                                   sess.run(predict_op, feed_dict={X: teX[start:end],
+            #                                                                   p_keep_conv: 1.0,
+            #                                                                   p_keep_hidden: 1.0}))
+            #     total_accuracy.append(test_batch_accuracy)
 
-            count = 1
-            for start, end in training_batch:
-                print('batch number {}'.format(count))
-                count += 1
-                # image_batch = trX[start:end]
-                # distorted_images = sess.run(tf.image.random_flip_left_right(image_batch))
-                # distorted_images = sess.run(tf.image.random_flip_up_down(distorted_images))
-                # distort_image = tf.image.random_flip_up_down(image_batch)
-                # distort_image = tf.image.random_flip_left_right(distort_image)
-                # print(len(distorted_images))
-                # print(distorted_images.shape)
+            # test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
+            #                                              feed_dict={batch_accuracies: total_accuracy})
+            print("Epoch {}: testing accuracy: {}".format(epoch, test_accuracy_summary))
+            
+            if (epoch+1)%5 == 0:
+                save_path = './logs/attempt_{}/model_checkpoint/model_{}_epoch{}.ckpt'.format(attempt, name, epoch+1)
+                saver.save(sess, save_path)
+                print("Saved model at {}".format(save_path))  
+        #End of training  
 
-                summary, _ = sess.run([merged, train_op], feed_dict={X: trX[start:end], Y: trY[start:end],
-                                              p_keep_conv: 0.8, p_keep_hidden: 0.5})
 
-                #visualize feature maps for one image after a training epoch
-                filteredImage = sess.run(l1a, feed_dict={X: trX[0].reshape(1,32,32,3), p_keep_conv: 1.0, p_keep_hidden: 1.0}) #(1,32,32,64)
+###############
+        # for i in range(15):
+        #     training_batch = zip(range(0, len(trX), batch_size),
+        #                          range(batch_size, len(trX) + 1, batch_size))
+
+        #     count = 1
+        #     for start, end in training_batch:
+        #         print('batch number {}'.format(count))
+        #         count += 1
+        #         # image_batch = trX[start:end]
+        #         # distorted_images = sess.run(tf.image.random_flip_left_right(image_batch))
+        #         # distorted_images = sess.run(tf.image.random_flip_up_down(distorted_images))
+        #         # distort_image = tf.image.random_flip_up_down(image_batch)
+        #         # distort_image = tf.image.random_flip_left_right(distort_image)
+        #         # print(len(distorted_images))
+        #         # print(distorted_images.shape)
+
+        #         summary, _ = sess.run([merged, train_op], feed_dict={X: trX[start:end], Y: trY[start:end],
+        #                                       p_keep_conv: 0.8, p_keep_hidden: 0.5})
+
+        #         #visualize feature maps for one image after a training epoch
+        #         filteredImage = sess.run(l1a, feed_dict={X: trX[0].reshape(1,32,32,3), p_keep_conv: 1.0, p_keep_hidden: 1.0}) #(1,32,32,64)
                 
-                print("filtered image shape:", filteredImage.shape[3])
-                print(tf.size(filteredImage))
-# tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
-                filteredImage = sess.run(tf.transpose(filteredImage, (3,2,1,0))) #(64,32,32,1)
-                print(filteredImage.shape)
-                # filteredImage = sess.run(tf.transpose(tf.reshape(filteredImage, shape=[64, 1, 32, 32]), perm=[0, 3, 2, 1]))
-                # filteredImage = sess.run(tf.transpose(filteredImage, (0,3,1,2)))
-                # filteredImage = tf.reshape(filteredImage, (64,32,32,1))
-                print(filteredImage.shape)
-                fm_summary = sess.run(feature_map_summary, feed_dict={feature_map_image: filteredImage})
-                summary_writer.add_summary(fm_summary)
-                # for i in range(filteredImage.shape[3]):
-                #     img1 = filteredImage[:,:,:,i]
-                #     print(img1.shape)
-                #     plt.imshow(filteredImage[:,:,:,i].reshape(32,32))
-                #     plt.show()
+        #         filteredImage = sess.run(tf.transpose(filteredImage, (1,2,0,3))) #(64,32,32,1)
+        #         print(filteredImage.shape)
+        #         a_maps = put_kernels_on_grid(filteredImage)
+        #         print("shape of a map,", a_maps.shape)
+        #         print("filtered image shape:", filteredImage.shape[3])
+        #         print(tf.size(filteredImage))
+        #         filteredImage = sess.run(tf.transpose(filteredImage, (3,2,1,0))) #(64,32,32,1)
+        #         print(filteredImage.shape)
+        #         # tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
+        #         filteredImage = sess.run(tf.transpose(tf.reshape(filteredImage, shape=[64, 1, 32, 32]), perm=[0, 2, 3, 1]))
+        #         # filteredImage = sess.run(tf.transpose(filteredImage, (0,3,1,2)))
+        #         # filteredImage = tf.reshape(filteredImage, (64,32,32,1))
+        #         print(filteredImage.shape)
+        #         fm_summary = sess.run(feature_map_summary, feed_dict={feature_map_image: filteredImage})
+        #         summary_writer.add_summary(fm_summary)
+        #         # for i in range(filteredImage.shape[3]):
+        #         #     img1 = filteredImage[:,:,:,i]
+        #         #     print(img1.shape)
+        #         #     plt.imshow(filteredImage[:,:,:,i].reshape(32,32))
+        #         #     plt.show()
                 
-            summary_writer.add_summary(summary)#just add the last batch of images
+        #     summary_writer.add_summary(summary)#just add the last batch of images
 
             
 
 
 
-            saver.save(sess, './logs/attempt_{}/model_checkpoint/model_{}.ckpt'.format(attempt, name))
+            # saver.save(sess, './logs/attempt_{}/model_checkpoint/model_{}.ckpt'.format(attempt, name))
 
-            testing_batch = zip(range(0, len(teX), batch_size),
-                                range(batch_size, len(teX) + 1, batch_size))
+            # testing_batch = zip(range(0, len(teX), batch_size),
+            #                     range(batch_size, len(teX) + 1, batch_size))
 
-            total_accuracy = []
-            for start, end in testing_batch:
-                test_batch_accuracy = np.mean(np.argmax(teY[start:end], axis=1) ==
-                                              sess.run(predict_op, feed_dict={X: teX[start:end],
-                                                                              p_keep_conv: 1.0,
-                                                                              p_keep_hidden: 1.0}))
-                total_accuracy.append(test_batch_accuracy)
+            # total_accuracy = []
+            # for start, end in testing_batch:
+            #     test_batch_accuracy = np.mean(np.argmax(teY[start:end], axis=1) ==
+            #                                   sess.run(predict_op, feed_dict={X: teX[start:end],
+            #                                                                   p_keep_conv: 1.0,
+            #                                                                   p_keep_hidden: 1.0}))
+            #     total_accuracy.append(test_batch_accuracy)
 
-            test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
-                                                         feed_dict={batch_accuracies: total_accuracy})
+            # test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
+            #                                              feed_dict={batch_accuracies: total_accuracy})
 
-            summary_writer.add_summary(test_accuracy_summary, i + 1)
-            print("Epoch : {}, Test Acc: {}".format(i + 1, m_accuracy))
+            # summary_writer.add_summary(test_accuracy_summary, i + 1)
+            # print("Epoch : {}, Test Acc: {}".format(i + 1, m_accuracy))
