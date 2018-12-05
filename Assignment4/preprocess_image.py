@@ -99,7 +99,7 @@ def cifar10(path=None):
 
     # Pixels are everything remaining after we delete the labels
     pixels = np.delete(buffr, np.arange(0, buffr.size, 3073))
-    images = pixels.reshape(-1, 32, 32, 3).astype('float32') / 255
+    images = pixels.reshape(-1, 3, 32, 32).astype('float32') / 255
 
     # Split into train and test
     train_images, test_images = images[:50000], images[50000:]
@@ -139,27 +139,52 @@ def _write_example(image, label):
                 }))
     return example
 
+
+def salt_pepper(image):
+    row,col,ch = image.shape
+    
+    s_vs_p = 0.5
+    amount = 0.02
+    out = np.copy(image)
+    x = np.random.random_integers(0, row-1, int(amount*row*col))
+    y = np.random.random_integers(0, col-1, int(amount*row*col))
+    n = int(len(x) * s_vs_p)
+
+    #salt
+    for i,j in zip(x[:n],y[:n]):
+        # print(i, j)
+        out[i][j] = 1
+    #pepper
+    for i,j in zip(x[n:],y[n:]):
+        # print(i, j)
+        out[i][j] = 0
+    return out
+
 def modify_image(trX, trY):
     #Distort the images
     # with tf.Session() as sess:
         #for each image, we add one distortion
     distorted = []
     labels = []
-    from scipy import ndimage
-    sess = tf.InteractiveSession()
     #for each image we rotate 90 degrees
     for i in range(len(trX)):
-        d_img = np.reshape(trX[i], )
-        d_img = np.rot90(trX[i], 2, axes=(1,2))
+        #if i % 1000 == 0:
+        print("on image", i)
 
-        print(np.shape(d_img))
+        #d_img = sess.run(tf.image.random_flip_left_right(
+        #                trX[i].transpose(1, 2, 0))).transpose(2, 0, 1)
+        d_img = trX[i]
+
+        d_img = salt_pepper(np.rot90(d_img.transpose(1, 2, 0), np.random.randint(0,4))).transpose(2, 0, 1)
+        
         distorted.append(d_img)
-        from scipy.misc import toimage
-        # img = plt.imshow(toimage(sess.run( tf.transpose(tf.reshape(d_img, shape=[3,32,32]), perm=[1,2,0] )    ) ), interpolation='nearest')
-        img = plt.imshow(toimage(d_img.reshape(3, 32, 32)), interpolation='nearest')
-        plt.show()
-        img = plt.imshow(toimage(trX[i].reshape(3, 32, 32)), interpolation='nearest')
-        plt.show()
+
+        # print(d_img.shape)
+        # img = plt.imshow(d_img.transpose(1, 2, 0))
+        # plt.show()
+        # img = plt.imshow(trX[i].transpose(1, 2, 0))
+        # plt.show()
+        #break
     distorted.extend(trX)
     labels.extend(trY)
     labels.extend(trY)
