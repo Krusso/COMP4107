@@ -17,7 +17,7 @@ def parse_example(example):
     return image, tf.one_hot(label, 10)
 
 
-def input_fn(filenames, shuffle_buff=15000, batch_size=100):
+def input_fn(filenames, shuffle_buff=1500, batch_size=128):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.shuffle(shuffle_buff)
     dataset = dataset.map(lambda example: parse_example(example))
@@ -221,7 +221,7 @@ while True:
         break
 
 
-for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
+for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
     l1a, py_x, features = model
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
@@ -251,24 +251,23 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
         tf.global_variables_initializer().run()
 
         for epoch in range(15):
-        
             # Initialize the training iterator to consume training data
             sess.run(train_init_op)    
             while True:
                 # as long as the iterator has not hit the end, continue to consume training data
                 try:
                     images, labels = sess.run(next_train_batch)
+                    # print(images)
                     train_summary, _ = sess.run([merged, train_op], feed_dict={ X: images,
                                                                                 Y: labels,
                                                                                 p_keep_conv: 0.8, p_keep_hidden: 0.5})
-                    break
                 except tf.errors.OutOfRangeError:
                     # end of training epoch
                     summary_writer.add_summary(train_summary, epoch)
                     break
             # Initialize the validation iterator to consume validation data
             sess.run(test_init_op)
-            total_accuracy = []
+            total_accuracy = [] 
             while True:
                 try:
                     images, labels = sess.run(next_test_batch)
@@ -278,79 +277,82 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
                                                                 p_keep_conv:1.0, 
                                                                 p_keep_hidden:1.0}))
                     total_accuracy.append(test_batch_accuracy)
-                    break
+                    
                 except tf.errors.OutOfRangeError:
                     test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
                                                 feed_dict={batch_accuracies: total_accuracy})
+
                     summary_writer.add_summary(test_accuracy_summary, epoch)
                     # end of validation
+                    print("Epoch {}: testing accuracy: {}".format(epoch, test_accuracy_summary))
+            
+                    if (epoch+1)%5 == 0:
+                        save_path = './logs/attempt_{}/model_checkpoint/model_{}_epoch{}.ckpt'.format(attempt, name, epoch+1)
+                        saver.save(sess, save_path)
+                        print("Saved model at {}".format(save_path))  
                     break
 
-            # Reinitialize test data to get top 9 patches from test data
-            sess.run(test_init_op)
-            images, labels = sess.run(next_test_batch)
-            from heapq import heappush, heappushpop
+            # # Reinitialize test data to get top 9 patches from test data
+            # sess.run(test_init_op)
+            # images, labels = sess.run(next_test_batch)
+            # from heapq import heappush, heappushpop
 
-            heap = []
-            indices = [i for i in range(features)]
-            indices = random.sample(indices, min(9, features))
+            # heap = []
+            # indices = [i for i in range(features)]
+            # indices = random.sample(indices, min(9, features))
 
-            for image, label in zip(images, labels):
-                fm = sess.run(l1a, feed_dict={X: [image]})
-                fm = fm.transpose(3, 1, 2, 0)
+            # for image, label in zip(images, labels):
+            #     fm = sess.run(l1a, feed_dict={X: [image]})
+            #     fm = fm.transpose(3, 1, 2, 0)
 
-                for index in indices:
-                    if len(heap) < 9:
-                        heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
-                    else:
-                        heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
-                        
-            print("Epoch {}: testing accuracy: {}".format(epoch, test_accuracy_summary))
+            #     for index in indices:
+            #         if len(heap) < 9:
+            #             heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+            #         else:
+            #             heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+
+
             
-            if (epoch+1)%5 == 0:
-                save_path = './logs/attempt_{}/model_checkpoint/model_{}_epoch{}.ckpt'.format(attempt, name, epoch+1)
-                saver.save(sess, save_path)
-                print("Saved model at {}".format(save_path))  
-            top9 = sorted(heap, reverse=True)
+        #     top9 = sorted(heap, reverse=True)
 
-            fmc = 0
+        #     fmc = 0
 
-            for distance, image, fm, index in top9:
-                fmc += 1
-                summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
-                                              format(fmc, index),
-                                              np.array([image.reshape(3, 32, 32).transpose(1, 2, 0)]),
-                                              max_outputs=1, family="image")
+        #     for distance, image, fm, index in top9:
+        #         fmc += 1
+        #         summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
+        #                                       format(fmc, index),
+        #                                       np.array([image.reshape(3, 32, 32).transpose(1, 2, 0)]),
+        #                                       max_outputs=1, family="image")
 
-                summary_writer.add_summary(summary_op.eval(), epoch)
+        #         summary_writer.add_summary(summary_op.eval(), epoch)
 
-                summary_op = tf.summary.image("#{} highest activation for feature map #{}"
-                                              .format(fmc, index),
-                                              np.array([fm]),
-                                              max_outputs=1, family='feature_map')
+        #         summary_op = tf.summary.image("#{} highest activation for feature map #{}"
+        #                                       .format(fmc, index),
+        #                                       np.array([fm]),
+        #                                       max_outputs=1, family='feature_map')
 
-                summary_writer.add_summary(summary_op.eval(), epoch)
+        #         summary_writer.add_summary(summary_op.eval(), epoch)
 
-                cmap = plt.get_cmap('jet')
-                rgba_img = cmap(fm.reshape(32, 32))
+        #         cmap = plt.get_cmap('jet')
+        #         rgba_img = cmap(fm.reshape(32, 32))
 
-                rgb = np.delete(rgba_img, 3, 2)
+        #         rgb = np.delete(rgba_img, 3, 2)
 
-                summary_op = tf.summary.image("#{} highest activation for feature heatmap #{}"
-                                              .format(fmc, index),
-                                              np.array([rgb]),
-                                              max_outputs=1, family='feature_map')
+        #         summary_op = tf.summary.image("#{} highest activation for feature heatmap #{}"
+        #                                       .format(fmc, index),
+        #                                       np.array([rgb]),
+        #                                       max_outputs=1, family='feature_map')
 
-                summary_writer.add_summary(summary_op.eval(), epoch)
+        #         summary_writer.add_summary(summary_op.eval(), epoch)
 
 
 
-                # img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
-                # plt.show()
-                # #summary_writer.add_summary(tf.summary.image('Image', image), image)
-                # #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
+        #         # img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
+        #         # plt.show()
+        #         # #summary_writer.add_summary(tf.summary.image('Image', image), image)
+        #         # #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
 
-            summary_writer.flush()
+        #     summary_writer.flush()
 
 
-        # End of training
+        # # End of training
