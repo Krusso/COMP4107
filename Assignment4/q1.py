@@ -292,67 +292,67 @@ for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
                         print("Saved model at {}".format(save_path))  
                     break
 
-            # # Reinitialize test data to get top 9 patches from test data
-            # sess.run(test_init_op)
-            # images, labels = sess.run(next_test_batch)
-            # from heapq import heappush, heappushpop
+            # Reinitialize test data to get top 9 patches from test data
+            sess.run(test_init_op)
+            images, labels = sess.run(next_test_batch)
+            from heapq import heappush, heappushpop
 
-            # heap = []
-            # indices = [i for i in range(features)]
-            # indices = random.sample(indices, min(9, features))
+            heap = []
+            indices = [i for i in range(features)]
+            indices = random.sample(indices, min(9, features))
 
-            # for image, label in zip(images, labels):
-            #     fm = sess.run(l1a, feed_dict={X: [image]})
-            #     fm = fm.transpose(3, 1, 2, 0)
+            for image, label in zip(images, labels):
+                fm = sess.run(l1a, feed_dict={X: [image]})
+                fm = fm.transpose(3, 1, 2, 0)
 
-            #     for index in indices:
-            #         if len(heap) < 9:
-            #             heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
-            #         else:
-            #             heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                for index in indices:
+                    if len(heap) < 9:
+                        heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                    else:
+                        heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
 
 
             
-        #     top9 = sorted(heap, reverse=True)
+            top9 = sorted(heap, reverse=True)
 
-        #     fmc = 0
+            fmc = 0
 
-        #     for distance, image, fm, index in top9:
-        #         fmc += 1
-        #         summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
-        #                                       format(fmc, index),
-        #                                       np.array([image.reshape(3, 32, 32).transpose(1, 2, 0)]),
-        #                                       max_outputs=1, family="image")
+            for distance, image, fm, index in top9:
+                fmc += 1
+                summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
+                                              format(fmc, index),
+                                              np.array([image.reshape(3, 32, 32).transpose(1, 2, 0)]),
+                                              max_outputs=1, family="image")
 
-        #         summary_writer.add_summary(summary_op.eval(), epoch)
+                summary_writer.add_summary(summary_op.eval(), epoch)
 
-        #         summary_op = tf.summary.image("#{} highest activation for feature map #{}"
-        #                                       .format(fmc, index),
-        #                                       np.array([fm]),
-        #                                       max_outputs=1, family='feature_map')
+                summary_op = tf.summary.image("#{} highest activation for feature map #{}"
+                                              .format(fmc, index),
+                                              np.array([fm]),
+                                              max_outputs=1, family='feature_map')
 
-        #         summary_writer.add_summary(summary_op.eval(), epoch)
+                summary_writer.add_summary(summary_op.eval(), epoch)
 
-        #         cmap = plt.get_cmap('jet')
-        #         rgba_img = cmap(fm.reshape(32, 32))
+                cmap = plt.get_cmap('jet')
+                rgba_img = cmap(fm.reshape(32, 32))
 
-        #         rgb = np.delete(rgba_img, 3, 2)
+                rgb = np.delete(rgba_img, 3, 2)
 
-        #         summary_op = tf.summary.image("#{} highest activation for feature heatmap #{}"
-        #                                       .format(fmc, index),
-        #                                       np.array([rgb]),
-        #                                       max_outputs=1, family='feature_map')
+                summary_op = tf.summary.image("#{} highest activation for feature heatmap #{}"
+                                              .format(fmc, index),
+                                              np.array([rgb]),
+                                              max_outputs=1, family='feature_map')
 
-        #         summary_writer.add_summary(summary_op.eval(), epoch)
+                summary_writer.add_summary(summary_op.eval(), epoch)
 
 
 
-        #         # img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
-        #         # plt.show()
-        #         # #summary_writer.add_summary(tf.summary.image('Image', image), image)
-        #         # #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
+                # img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
+                # plt.show()
+                # #summary_writer.add_summary(tf.summary.image('Image', image), image)
+                # #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
 
-        #     summary_writer.flush()
+            summary_writer.flush()
 
 
         # # End of training
