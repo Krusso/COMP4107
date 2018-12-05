@@ -277,7 +277,6 @@ for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
                                                                 p_keep_conv:1.0, 
                                                                 p_keep_hidden:1.0}))
                     total_accuracy.append(test_batch_accuracy)
-                    
                 except tf.errors.OutOfRangeError:
                     test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
                                                 feed_dict={batch_accuracies: total_accuracy})
@@ -300,6 +299,8 @@ for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
             heap = []
             indices = [i for i in range(features)]
             indices = random.sample(indices, min(9, features))
+            from itertools import count
+            tiebreaker = count()
 
             for image, label in zip(images, labels):
                 fm = sess.run(l1a, feed_dict={X: [image]})
@@ -307,17 +308,15 @@ for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
 
                 for index in indices:
                     if len(heap) < 9:
-                        heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                        heappush(heap, (np.linalg.norm(fm[index]), next(tiebreaker),  image, fm[index], index))
                     else:
-                        heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                        heappushpop(heap, (np.linalg.norm(fm[index]), next(tiebreaker), image, fm[index], index))
 
-
-            
             top9 = sorted(heap, reverse=True)
 
             fmc = 0
 
-            for distance, image, fm, index in top9:
+            for distance, _, image, fm, index in top9:
                 fmc += 1
                 summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
                                               format(fmc, index),
