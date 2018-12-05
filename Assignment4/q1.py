@@ -3,22 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import toimage
-
-# https://www.tensorflow.org/tutorials/images/deep_cnn
-# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10/
-DATA_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
-DATA_DIR = './tmp'
-
-# Process images of this size. Note that this differs from the original CIFAR
-# image size of 32 x 32. If one alters this number, then the entire model
-# architecture will change and any model would need to be retrained.
-IMAGE_SIZE = 32
-
-# Global constants describing the CIFAR-10 data set.
-NUM_CLASSES = 10
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10000
-
+import random
 
 def parse_example(example):
     features = {'image_raw': tf.FixedLenFeature((), tf.string, default_value=""),
@@ -54,14 +39,9 @@ def model1(X, p_keep_conv, p_keep_hidden):
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
-     
-
-
 
     l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
                         strides=[1, 2, 2, 1], padding='SAME')
-
-    # tf.summary.image('Layer 1 Max Pool', l1)
 
     l1 = tf.nn.dropout(l1, p_keep_conv)
 
@@ -72,7 +52,7 @@ def model1(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model2(X, p_keep_conv, p_keep_hidden):
@@ -104,7 +84,7 @@ def model2(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model3(X, p_keep_conv, p_keep_hidden):
@@ -120,8 +100,6 @@ def model3(X, p_keep_conv, p_keep_hidden):
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
 
-    #tf.summary.image('layer 1', l1a)
-
     l1a = tf.nn.relu(tf.nn.conv2d(l1a, w_1,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
     l1 = tf.nn.max_pool(l1a, ksize=[1, 4, 4, 1],  # l1 shape=(?, 8, 8, 32)
@@ -135,7 +113,7 @@ def model3(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model4(X, p_keep_conv, p_keep_hidden):
@@ -162,32 +140,48 @@ def model4(X, p_keep_conv, p_keep_hidden):
     l4 = tf.nn.dropout(l4, p_keep_hidden)
 
     pyx = tf.matmul(l4, w_o)
-    return pyx
+    return l1a, pyx, 32
 
 
 def model5(X, p_keep_conv, p_keep_hidden):
-    w = init_weights([3, 3, 3, 64])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
-    w_fc = init_weights([64 * 16 * 16, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+    w_1 = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w_1)
+
+    w_2 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32", w_2)
+
+    w_3 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
+    tf.summary.histogram("weights of third convolution layer 3x3x32x32", w_3)
+
+    w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
     tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
     tf.summary.histogram("weights of 10 neuron output layer", w_o)
 
-    l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
-                                strides=[1, 1, 1, 1], padding='SAME'))
-    
-    l1 = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 16, 16, 32)
+    l1a = tf.nn.relu(tf.nn.conv2d(X, w_1,  # X=(128,32,32,3) l1a shape=(?, 32, 32, 32)
+                                  strides=[1, 1, 1, 1], padding='SAME'))
+    print('l1a shape,',l1a.shape)
+    l2a = tf.nn.relu(tf.nn.conv2d(l1a, w_2,  #l1a shape=(?, 32, 32, 32) l2a shape=(?, 32, 32, 32)
+                                  strides=[1, 1, 1, 1], padding='SAME'))
+    print('l2a shape', l2a.shape)
+    l2 = tf.nn.max_pool(l2a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 8, 8, 32)
                         strides=[1, 2, 2, 1], padding='SAME')
-    l1 = tf.nn.dropout(l1, p_keep_conv)
+    l2 = tf.nn.dropout(l2, p_keep_conv)
+    print('l2.shape',l2.shape)
+    l3a = tf.nn.relu(tf.nn.conv2d(l2, w_3, 
+                                 strides=[1,1,1,1], padding='SAME'))
+    l3 = tf.nn.max_pool(l3a, ksize=[1,2,2,1],
+                            strides=[1,2,2,1], padding='SAME')
 
-    l3 = tf.reshape(l1, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
+    l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
     l3 = tf.nn.dropout(l3, p_keep_conv)
 
     l4 = tf.nn.relu(tf.matmul(l3, w_fc))
     l4 = tf.nn.dropout(l4, p_keep_hidden)
-
+    print("p4 shape", l4.shape)
     pyx = tf.matmul(l4, w_o)
-    return l1a, pyx
+    print(pyx.shape)
+    return l1a, pyx, 32
 
 
 batch_size = 128
@@ -213,8 +207,6 @@ test_init_op = test_iterator.initializer
 X = tf.placeholder("float", [None, 32, 32, 3], name='image')
 Y = tf.placeholder("float", [None, 10], name='label')
 
-# tf.summary.image('Input Image', tf.transpose(tf.reshape(X, shape=[batch_size, 3, 32, 32]), perm=[0, 2, 3, 1]))
-
 feature_map_image = tf.placeholder("float", [None, 32, 32, 1])
 
 p_keep_conv = tf.placeholder("float")
@@ -230,7 +222,7 @@ while True:
 
 
 for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
-    l1a, py_x = model
+    l1a, py_x, features = model
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
@@ -300,38 +292,65 @@ for name, model in list([("model 5", model5(X, p_keep_conv, p_keep_hidden))]):
             from heapq import heappush, heappushpop
 
             heap = []
+            indices = [i for i in range(features)]
+            indices = random.sample(indices, min(9, features))
+
             for image, label in zip(images, labels):
                 fm = sess.run(l1a, feed_dict={X: [image]})
-                if len(heap) < 9:
-                    heappush(heap, (np.linalg.norm(fm[0]), image, fm[0]))
-                else:
-                    heappushpop(heap, (np.linalg.norm(fm[0]), image, fm[0]))
+                fm = fm.transpose(3, 1, 2, 0)
 
-            top9 = sorted(heap, reverse=True)
-            print("attempt", attempt)
-            for distance, image, fm in top9:
-                print(tf.shape(image))
-                print(tf.shape(image[0]))
-                print(tf.shape(image[0][0]))
-                print("All", np.shape(np.array([image])))
-
-                summary_op = tf.summary.image("model_projections",
-                                              np.array([image]),
-                                              max_outputs=1, family='normally')
-                # Summary has to be evaluated (converted into a string) before adding to the writer
-                summary_writer.add_summary(summary_op.eval(), 10)
-
-                img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
-                plt.show()
-                #summary_writer.add_summary(tf.summary.image('Image', image), image)
-                #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
-
-            summary_writer.flush()
-
+                for index in indices:
+                    if len(heap) < 9:
+                        heappush(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                    else:
+                        heappushpop(heap, (np.linalg.norm(fm[index]), image, fm[index], index))
+                        
             print("Epoch {}: testing accuracy: {}".format(epoch, test_accuracy_summary))
             
             if (epoch+1)%5 == 0:
                 save_path = './logs/attempt_{}/model_checkpoint/model_{}_epoch{}.ckpt'.format(attempt, name, epoch+1)
                 saver.save(sess, save_path)
                 print("Saved model at {}".format(save_path))  
+            top9 = sorted(heap, reverse=True)
+
+            fmc = 0
+
+            for distance, image, fm, index in top9:
+                fmc += 1
+                summary_op = tf.summary.image("image causing #{} highest activation for feature map #{}".
+                                              format(fmc, index),
+                                              np.array([image.reshape(3, 32, 32).transpose(1, 2, 0)]),
+                                              max_outputs=1, family="image")
+
+                summary_writer.add_summary(summary_op.eval(), epoch)
+
+                summary_op = tf.summary.image("#{} highest activation for feature map #{}"
+                                              .format(fmc, index),
+                                              np.array([fm]),
+                                              max_outputs=1, family='feature_map')
+
+                summary_writer.add_summary(summary_op.eval(), epoch)
+
+                cmap = plt.get_cmap('jet')
+                rgba_img = cmap(fm.reshape(32, 32))
+
+                rgb = np.delete(rgba_img, 3, 2)
+
+                summary_op = tf.summary.image("#{} highest activation for feature heatmap #{}"
+                                              .format(fmc, index),
+                                              np.array([rgb]),
+                                              max_outputs=1, family='feature_map')
+
+                summary_writer.add_summary(summary_op.eval(), epoch)
+
+
+
+                # img = plt.imshow(toimage(image.reshape(3, 32, 32)), interpolation='nearest')
+                # plt.show()
+                # #summary_writer.add_summary(tf.summary.image('Image', image), image)
+                # #summary_writer.add_summary(tf.summary.image('Feature Map', fm), fm)
+
+            summary_writer.flush()
+
+
         # End of training
