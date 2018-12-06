@@ -3,6 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import toimage
+import sys
 import random
 
 def parse_example(example):
@@ -30,12 +31,13 @@ def init_weights(shape):
 
 
 def model1(X, p_keep_conv, p_keep_hidden):
+    print("Creating model1")
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model1", w)
     w_fc = init_weights([32 * 16 * 16, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
-    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
+    tf.summary.histogram("weights of fully connected 625 neuron first layer model1", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
-    tf.summary.histogram("weights of 10 neuron output layer", w_o)
+    tf.summary.histogram("weights of 10 neuron output layer model1", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -56,14 +58,15 @@ def model1(X, p_keep_conv, p_keep_hidden):
 
 
 def model2(X, p_keep_conv, p_keep_hidden):
+    print("Creating model2")
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model2", w)
     w_1 = init_weights([3, 3, 32, 32])  # 3x3x32 conv, 32 outputs
-    tf.summary.histogram("weights of second convolution layer 3x3x32x32", w_1)
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32 model2", w_1)
     w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
-    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
+    tf.summary.histogram("weights of fully connected 625 neuron first layer model2", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
-    tf.summary.histogram("weights of 10 neuron output layer", w_o)
+    tf.summary.histogram("weights of 10 neuron output layer model2", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -88,14 +91,15 @@ def model2(X, p_keep_conv, p_keep_hidden):
 
 
 def model3(X, p_keep_conv, p_keep_hidden):
+    print("Creating model3")
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model3", w)
     w_1 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of second convolution layer 3x3x32x32", w_1)
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32 model3", w_1)
     w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
-    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
+    tf.summary.histogram("weights of fully connected 625 neuron first layer model3", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
-    tf.summary.histogram("weights of 10 neuron output layer", w_o)
+    tf.summary.histogram("weights of 10 neuron output layer model3", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -117,12 +121,13 @@ def model3(X, p_keep_conv, p_keep_hidden):
 
 
 def model4(X, p_keep_conv, p_keep_hidden):
+    print("Creating model4")
     w = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model4", w)
     w_fc = init_weights([32 * 31 * 31, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
-    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
+    tf.summary.histogram("weights of fully connected 625 neuron first layer model4", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
-    tf.summary.histogram("weights of 10 neuron output layer", w_o)
+    tf.summary.histogram("weights of 10 neuron output layer model4", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w,  # l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -144,19 +149,20 @@ def model4(X, p_keep_conv, p_keep_hidden):
 
 
 def model5(X, p_keep_conv, p_keep_hidden):
+    print("Creating model5")
     w_1 = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32", w_1)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model5", w_1)
 
     w_2 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of second convolution layer 3x3x32x32", w_2)
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32 model5", w_2)
 
     w_3 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of third convolution layer 3x3x32x32", w_3)
+    tf.summary.histogram("weights of third convolution layer 3x3x32x32 model5", w_3)
 
     w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
-    tf.summary.histogram("weights of fully connected 625 neuron first layer", w_fc)
+    tf.summary.histogram("weights of fully connected 625 neuron first layer model5", w_fc)
     w_o = init_weights([625, 10])  # FC 625 inputs, 10 outputs (labels)
-    tf.summary.histogram("weights of 10 neuron output layer", w_o)
+    tf.summary.histogram("weights of 10 neuron output layer model5", w_o)
 
     l1a = tf.nn.relu(tf.nn.conv2d(X, w_1,  # X=(128,32,32,3) l1a shape=(?, 32, 32, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
@@ -206,6 +212,7 @@ test_init_op = test_iterator.initializer
 
 X = tf.placeholder("float", [None, 32, 32, 3], name='image')
 Y = tf.placeholder("float", [None, 10], name='label')
+batch_accuracies = tf.placeholder("float", [None])
 
 feature_map_image = tf.placeholder("float", [None, 32, 32, 1])
 
@@ -221,14 +228,30 @@ while True:
         break
 
 
-for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
+if len(sys.argv) == 2:
+    if sys.argv[1] == "1":
+        name, model = ("model 1", model1(X, p_keep_conv, p_keep_hidden))
+    elif sys.argv[1] == "2":
+        name, model = ("model 2", model2(X, p_keep_conv, p_keep_hidden))
+    elif sys.argv[1] == "3":
+        name, model = ("model 3", model3(X, p_keep_conv, p_keep_hidden))
+    elif sys.argv[1] == "4":
+        name, model = ("model 4", model4(X, p_keep_conv, p_keep_hidden))
+    elif sys.argv[1] == "5":
+        name, model = ("model 5", model5(X, p_keep_conv, p_keep_hidden))
+    else:
+        name, model = ("model 1", model1(X, p_keep_conv, p_keep_hidden))
+else:
+    name, model = ("model 1", model1(X, p_keep_conv, p_keep_hidden))
+
+for name, model in list([(name, model)]):
+    print("Starting model", name)
     l1a, py_x, features = model
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
 
-    batch_accuracies = tf.placeholder("float", [None])
     mean_accuracy = tf.reduce_mean(tf.cast(batch_accuracies, tf.float32))
 
     # Launch the graph in a session
