@@ -221,7 +221,7 @@ while True:
         break
 
 
-for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
+for name, model in list([("model 1", model1(X, p_keep_conv, p_keep_hidden))]):
     l1a, py_x, features = model
 
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
@@ -283,7 +283,7 @@ for name, model in list([("model 5", model1(X, p_keep_conv, p_keep_hidden))]):
 
                     summary_writer.add_summary(test_accuracy_summary, epoch)
                     # end of validation
-                    print("Epoch {}: testing accuracy: {}".format(epoch, test_accuracy_summary))
+                    print("Epoch {}: testing accuracy: {}".format(epoch, m_accuracy))
             
                     if (epoch+1)%5 == 0:
                         save_path = './logs/attempt_{}/model_checkpoint/model_{}_epoch{}.ckpt'.format(attempt, name, epoch+1)
