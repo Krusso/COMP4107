@@ -1,9 +1,13 @@
 import math
 import tensorflow as tf
 
+# https://github.com/tensorflow/tensorflow/issues/6720
+# https://hackernoon.com/how-tensorflows-tf-image-resize-stole-60-days-of-my-life-aba5eb093f35
+
 # https://github.com/tensorflow/tensorflow/issues/6011
 # https://github.com/tensorflow/tensorflow/pull/13259/files
 # https://github.com/tensorflow/tensorflow/pull/12852/files
+
 
 # Spatial Pyramid Pooling block
 # https://arxiv.org/abs/1406.4729
@@ -27,7 +31,7 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
                                   ksize=[1, h_size, h_size, 1],
                                   strides=[1, h_strd, w_strd, 1],
                                   padding='SAME')
-        if (i == 0):
+        if i == 0:
             spp = tf.reshape(max_pool, [num_sample, -1])
         else:
             spp = tf.concat(axis=1, values=[spp, tf.reshape(max_pool, [num_sample, -1])])
