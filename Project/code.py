@@ -37,3 +37,7 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
             spp = tf.concat(axis=1, values=[spp, tf.reshape(max_pool, [num_sample, -1])])
 
     return spp
+
+
+# https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
+# confusion matrix
