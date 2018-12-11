@@ -15,7 +15,8 @@ import matplotlib.image as mpimg
 
 FLAGS = None
 
-
+# short for quick testing, will only deal with several hundred images not the entire dataset
+# cropAndPad if false use tf.image.resize_images if true then use tf.image_image_with_crop_or_pad
 def natural_images(path='./natural_images', width=32, height=32, cropAndPad=False, short=False):
     files = [('airplane', [1, 0, 0, 0, 0, 0, 0, 0]),
              ('car', [0, 1, 0, 0, 0, 0, 0, 0]),
