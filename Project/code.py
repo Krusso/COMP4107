@@ -1,46 +1,11 @@
-import math
 import tensorflow as tf
-import imblearn.over_sampling as imb
+
 import os
+import matplotlib.pyplot as plt
 import numpy as np
-
-
-# https://github.com/tensorflow/tensorflow/issues/6720
-# https://hackernoon.com/how-tensorflows-tf-image-resize-stole-60-days-of-my-life-aba5eb093f35
-
-# https://github.com/tensorflow/tensorflow/issues/6011
-# https://github.com/tensorflow/tensorflow/pull/13259/files
-# https://github.com/tensorflow/tensorflow/pull/12852/files
-
-
-# Spatial Pyramid Pooling block
-# https://arxiv.org/abs/1406.4729
-def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool_size):
-    """
-    https://github.com/peace195/sppnet/blob/master/alexnet_spp.py
-    previous_conv: a tensor vector of previous convolution layer
-    num_sample: an int number of image in the batch
-    previous_conv_size: an int vector [height, width] of the matrix features size of previous convolution layer
-    out_pool_size: a int vector of expected output size of max pooling layer
-
-    returns: a tensor vector with shape [1 x n] is the concentration of multi-level pooling
-    """
-    for i in range(len(out_pool_size)):
-        h_strd = h_size = math.ceil(float(previous_conv_size[0]) / out_pool_size[i])
-        w_strd = w_size = math.ceil(float(previous_conv_size[1]) / out_pool_size[i])
-        pad_h = int(out_pool_size[i] * h_size - previous_conv_size[0])
-        pad_w = int(out_pool_size[i] * w_size - previous_conv_size[1])
-        new_previous_conv = tf.pad(previous_conv, tf.constant([[0, 0], [0, pad_h], [0, pad_w], [0, 0]]))
-        max_pool = tf.nn.max_pool(new_previous_conv,
-                                  ksize=[1, h_size, h_size, 1],
-                                  strides=[1, h_strd, w_strd, 1],
-                                  padding='SAME')
-        if i == 0:
-            spp = tf.reshape(max_pool, [num_sample, -1])
-        else:
-            spp = tf.concat(axis=1, values=[spp, tf.reshape(max_pool, [num_sample, -1])])
-
-    return spp
+from sklearn.metrics import confusion_matrix
+import itertools
+from SpatialPyramidPooling import SpatialPyramidPooling as spp
 
 
 def init_weights(shape):
@@ -58,7 +23,11 @@ def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
     w_3 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
     tf.summary.histogram("weights of third convolution layer 3x3x32x32 model5", w_3)
 
-    w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+    if spatial:
+        w_fc = init_weights([1600, 625])  # FC 3^2 + 4^2 + 5^2 + 6^2 inputs, 625 outputs
+    else:
+        w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+
     tf.summary.histogram("weights of fully connected 625 neuron first layer model5", w_fc)
     w_o = init_weights([625, 8])  # FC 625 inputs, 8 outputs (labels)
     tf.summary.histogram("weights of 8 neuron output layer model5", w_o)
@@ -79,12 +48,16 @@ def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
                         strides=[1, 2, 2, 1], padding='SAME')
 
     if spatial:
-        # do spatial pooling
-        print(l3.get_shape())
-        l3 = spatial_pyramid_pool(l3,
-                                  int(l3.get_shape()[1]),
-                                  [int(l3.get_shape()[2]), int(l3.get_shape()[3])],
-                                  [8, 6, 4])
+        # spatial pooling
+        #print(l3.get_shape())
+        #l3 = spatial_pyramid_pool(l3,
+        #                          int(l3.get_shape()[1]),
+        #                          [int(l3.get_shape()[2]), int(l3.get_shape()[3])],
+        #                          [8, 6, 4])
+        #print("spatial size", l3.get_shape())
+        layer = spp(dimensions=[3, 4, 5]) # results in (3^2 + 4^2 + 5^2) * feature outputs
+        l3 = layer.apply(l3)
+
 
     l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
     l3 = tf.nn.dropout(l3, p_keep_conv)
@@ -95,10 +68,6 @@ def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
     pyx = tf.matmul(l4, w_o)
 
     return pyx
-
-
-# https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
-# confusion matrix
 
 
 def parse_example(example):
@@ -121,13 +90,49 @@ def input_fn(filenames, shuffle_buff=100, batch_size=128):
     return dataset
 
 
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print("confusion matrix", cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
+
+
 batch_size = 32
 
 train_set = input_fn(filenames=["distorted_images/train_set.tfrecords"],
                      batch_size=batch_size)
 
 test_set = input_fn(filenames=["distorted_images/test_set.tfrecords"],
-                    batch_size=batch_size)
+                    batch_size=32)
 # Training iterators
 train_iterator = train_set.make_initializable_iterator()
 test_iterator = test_set.make_initializable_iterator()
@@ -155,7 +160,7 @@ while True:
     else:
         break
 
-for name, model in list([("Model", create_model(X, p_keep_conv, p_keep_hidden, spatial=False))]):
+for name, model in list([("Model", create_model(X, p_keep_conv, p_keep_hidden, spatial=True))]):
     print("Starting model", name)
     py_x = model
 
@@ -198,14 +203,21 @@ for name, model in list([("Model", create_model(X, p_keep_conv, p_keep_hidden, s
             # Initialize the validation iterator to consume validation data
             sess.run(test_init_op)
             total_accuracy = []
+            y_tests = []
+            y_preds = []
             while True:
                 try:
                     images, labels = sess.run(next_test_batch)
-                    test_batch_accuracy = np.mean(np.argmax(labels, axis=1) ==
-                                                  sess.run(predict_op, feed_dict={X: images,
-                                                                                  Y: labels,
-                                                                                  p_keep_conv: 1.0,
-                                                                                  p_keep_hidden: 1.0}))
+
+                    y_pred = sess.run(predict_op, feed_dict={X: images,
+                                                             Y: labels,
+                                                             p_keep_conv: 1.0,
+                                                             p_keep_hidden: 1.0})
+
+                    y_tests.extend(np.argmax(labels, axis=1))
+                    y_preds.extend(y_pred)
+
+                    test_batch_accuracy = np.mean(np.argmax(labels, axis=1) == y_pred)
                     total_accuracy.append(test_batch_accuracy)
                 except tf.errors.OutOfRangeError:
                     test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
@@ -220,6 +232,23 @@ for name, model in list([("Model", create_model(X, p_keep_conv, p_keep_hidden, s
                                                                                                       epoch + 1)
                         saver.save(sess, save_path)
                         print("Saved model at {}".format(save_path))
+
+                    # https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
+                    # confusion matrix
+
+                    plt.figure()
+
+                    cnf_matrix = confusion_matrix(y_tests, y_preds)
+                    plot_confusion_matrix(cnf_matrix, classes=["airplane",
+                                                               "car",
+                                                               "cat",
+                                                               "dog",
+                                                               "flower",
+                                                               "fruit",
+                                                               "motorbike",
+                                                               "person"],
+                                          title='Confusion matrix epoch {}'.format(epoch))
+                    plt.show()
                     break
 
             summary_writer.flush()

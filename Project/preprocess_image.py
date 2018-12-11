@@ -48,6 +48,9 @@ def natural_images(path='./natural_images', width=32, height=32, cropAndPad=Fals
                 if cropAndPad:
                     im = tf.image.resize_image_with_crop_or_pad(im, [height, width])
                 else:
+                    # https://github.com/tensorflow/tensorflow/issues/6720
+                    # https://hackernoon.com/how-tensorflows-tf-image-resize-stole-60-days-of-my-life-aba5eb093f35
+                    # TODO:
                     im = tf.image.resize_images(im, [height, width], align_corners=True)
 
                 dataset[i] = sess.run(im)
