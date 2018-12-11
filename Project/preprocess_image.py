@@ -16,7 +16,7 @@ import matplotlib.image as mpimg
 FLAGS = None
 
 
-def natural_images(path='./natural_images', width=32, height=32, cropAndPad=False, short=False):
+def natural_images(path='./natural_images', width=64, height=64, cropAndPad=False, short=False):
     files = [('airplane', [1, 0, 0, 0, 0, 0, 0, 0]),
              ('car', [0, 1, 0, 0, 0, 0, 0, 0]),
              ('cat', [0, 0, 1, 0, 0, 0, 0, 0]),
@@ -33,30 +33,54 @@ def natural_images(path='./natural_images', width=32, height=32, cropAndPad=Fals
     labels = np.ndarray(shape=(6899, 8),
                         dtype=np.float32)
 
-    with tf.Session() as sess:
-        i = 0
-        for file, label in files:
-            filepath = os.path.join(path, file)
-            filepath += '/*.jpg'
-            print(filepath)
+    # with tf.Session() as sess:
+    i = 0
+    for file, label in files:
+        filepath = os.path.join(path, file)
+        filepath += '/*.jpg'
+        print(filepath)
 
-            for filename in glob.glob(filepath):
+        for filename in glob.glob(filepath):
 
-                im = cv2.imread(filename, cv2.IMREAD_COLOR)
+            im = cv2.imread(filename, cv2.IMREAD_COLOR)
+            h, w, c = im.shape
+            # cv2.imshow('original',im)
+            # print(im.shape)
+            # print(height, width)
+            if cropAndPad:
+                # im = tf.image.resize_image_with_crop_or_pad(im, [height, width])
+                # im = cv2.resize(im, [height, width], interpolation=cv2.INTER_AREA)
+                if w > width: #if w is greater than resize width, crop it about the center.
+                    im = im[:, w//2 - width//2: w//2 + width//2]
+                else: #if w is smaller than the resize width, pad it with 0 about the center
+                    num_padding = width - w
+                    left_pad = num_padding//2
+                    right_pad = num_padding - left_pad
+                    im = cv2.copyMakeBorder(im, 0, 0, left_pad, right_pad, cv2.BORDER_CONSTANT, value=0)
 
-                if cropAndPad:
-                    im = tf.image.resize_image_with_crop_or_pad(im, [height, width])
-                else:
-                    im = tf.image.resize_images(im, [height, width], align_corners=True)
+                # print(im)
+                if h > height:
+                    im = im[h//2 - height//2: h//2 + height//2]
+                else: 
+                    num_padding = height - h
+                    top_pad = num_padding//2
+                    bot_pad = num_padding - top_pad
+                    im = cv2.copyMakeBorder(im, top_pad, bot_pad, 0, 0, cv2.BORDER_CONSTANT, value=0)
+                # print(im.shape)
+            else:
+                im = cv2.resize(im, (height, width), interpolation=cv2.INTER_AREA)
+                
+                # im = tf.image.resize_images(im, [height, width], align_corners=True)
+            # cv2.imshow('image',im)
+            # cv2.waitKey(0) 
+            dataset[i] = im
+            labels[i] = label
+            i += 1
 
-                dataset[i] = sess.run(im)
-                labels[i] = label
-                i += 1
-
-                if i % 100 == 0 and i > 0:
-                    print(i, "read")
-                    if short:
-                        break
+            if i % 100 == 0 and i > 0:
+                print(i, "read")
+                if short:
+                    break
 
     print("Done reading images")
 
@@ -165,50 +189,88 @@ def modify_image(trX, trY):
     labels.extend(trY)
     return shuffle(distorted, labels)
 
+def main(unused_argv):
+    DISTORTED_IMAGE_DIR = ".\distorted_images"
+    if not os.path.exists(DISTORTED_IMAGE_DIR):
+        os.makedirs(DISTORTED_IMAGE_DIR)
+        
+    if FLAGS.method == 'cp':
+        cropAndPad = True
+    else:
+        cropAndPad = False
 
-DISTORTED_IMAGE_DIR = ".\distorted_images"
-if not os.path.exists(DISTORTED_IMAGE_DIR):
-    os.makedirs(DISTORTED_IMAGE_DIR)
+    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=True)
+    # Different sizes we can try for the height/width of the modified images
+    # trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=32, cropAndPad=True)
+    # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=False)
+    # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=True)
+    # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=128, cropAndPad=False)
+    # trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=128, cropAndPad=True)
 
-train_file = os.path.join(DISTORTED_IMAGE_DIR, 'train_set.tfrecords')
-test_file = os.path.join(DISTORTED_IMAGE_DIR, 'test_set.tfrecords')
 
-trX, trY, teX, teY = natural_images(path='./natural_images', height=32, width=32, cropAndPad=False, short=True)
-# Different sizes we can try for the height/width of the modified images
-# trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=32, cropAndPad=True)
-# trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=False)
-# trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=True)
-# trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=128, cropAndPad=False)
-# trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=128, cropAndPad=True)
-print("Read natural images dataset")
 
-# TODO: @Michael get the data augmentation call back into the pipeline
-# modified_images, labels = modify_image(trX, trY)
-# print("Completed Modification of Images")
+    train_file = os.path.join(DISTORTED_IMAGE_DIR, 'train_set_h{}w{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method))
+    test_file = os.path.join(DISTORTED_IMAGE_DIR, 'test_set_h{}w{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method))
+    print("Read natural images dataset")
 
-n = len(trX)
-train_set = []
-test_set = []
-print("Converting modified dataset to tf Examples...")
-for i in range(n):
-    # convert to tf examples, labels one-hot encoding converted to integer (later parsing will need to convert back)
-    example = _write_example(trX[i], np.where(trY[i] == 1)[0][0])
-    train_set.append(example)
+    # TODO: @Michael get the data augmentation call back into the pipeline
+    # modified_images, labels = modify_image(trX, trY)
+    # print("Completed Modification of Images")
 
-print("Converting testing dataset to tf Examples...")
-for i in range(len(teX)):
-    example = _write_example(teX[i], np.where(teY[i] == 1)[0][0])
-    train_set.append(example)
+    n = len(trX)
+    train_set = []
+    test_set = []
+    print("Converting modified dataset to tf Examples...")
+    for i in range(n):
+        # convert to tf examples, labels one-hot encoding converted to integer (later parsing will need to convert back)
+        example = _write_example(trX[i], np.where(trY[i] == 1)[0][0])
+        train_set.append(example)
 
-print("Writing modified Examples into TFRecord file")
-# Rewrites all the files
-with tf.python_io.TFRecordWriter(train_file) as writer:
-    for example in train_set:
-        writer.write(example.SerializeToString())
+    print("Converting testing dataset to tf Examples...")
+    for i in range(len(teX)):
+        example = _write_example(teX[i], np.where(teY[i] == 1)[0][0])
+        train_set.append(example)
 
-print("Writing testing Examples into TFRecord file")
-with tf.python_io.TFRecordWriter(test_file) as writer:
-    for example in train_set:
-        writer.write(example.SerializeToString())
+    print("Writing modified Examples into TFRecord file")
+    # Rewrites all the files
+    with tf.python_io.TFRecordWriter(train_file) as writer:
+        for example in train_set:
+            writer.write(example.SerializeToString())
 
-print("done")
+    print("Writing testing Examples into TFRecord file")
+    with tf.python_io.TFRecordWriter(test_file) as writer:
+        for example in train_set:
+            writer.write(example.SerializeToString())
+
+    print("done")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--type',
+        type=str,
+        default='r',
+        help='choose either r or cp where. r means resize to hxw size or cp means crop and pad to hxw'
+    )    
+    parser.add_argument(
+        '--h',
+        type=int,
+        default=32,
+        help='height of resulting image'
+    )  
+    parser.add_argument(
+        '--w',
+        type=int,
+        default=32,
+        help='width of resulting image'
+    )  
+
+
+    FLAGS, unparsed = parser.parse_known_args()
+    print(FLAGS)
+    if FLAGS.method != 'cp' or FLAGS.method != 'r':
+        print('method is incorrect.')
+    else:
+        tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

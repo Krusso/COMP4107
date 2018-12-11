@@ -122,7 +122,8 @@ def input_fn(filenames, shuffle_buff=100, batch_size=128):
 
 
 batch_size = 32
-
+height=32
+width=32
 train_set = input_fn(filenames=["distorted_images/train_set.tfrecords"],
                      batch_size=batch_size)
 
