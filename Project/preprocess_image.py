@@ -12,8 +12,21 @@ from sklearn.utils import shuffle
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import time
+
+from sklearn.manifold import TSNE
 
 FLAGS = None
+
+
+def show_tnse():
+    n_sne = 7000
+
+    time_start = time.time()
+    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+    tsne_results = tsne.fit_transform(df.loc[rndperm[:n_sne],feat_cols].values)
+
+    print 't-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start)
 
 # short for quick testing, will only deal with several hundred images not the entire dataset
 # cropAndPad if false use tf.image.resize_images if true then use tf.image_image_with_crop_or_pad
