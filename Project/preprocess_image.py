@@ -13,6 +13,8 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+import imblearn.over_sampling as imb
+
 FLAGS = None
 
 
@@ -49,7 +51,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
             # cv2.imshow('original',im)
             # print(im.shape)
             # print(height, width)
-            if cropAndPad:
+            if FLAGS.method == 'cp':
                 # im = tf.image.resize_image_with_crop_or_pad(im, [height, width])
                 # im = cv2.resize(im, [height, width], interpolation=cv2.INTER_AREA)
                 if w > width: #if w is greater than resize width, crop it about the center.
@@ -69,7 +71,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
                     bot_pad = num_padding - top_pad
                     im = cv2.copyMakeBorder(im, top_pad, bot_pad, 0, 0, cv2.BORDER_CONSTANT, value=0)
                 # print(im.shape)
-            else:
+            elif FLAGS.method == 'r':
                 im = cv2.resize(im, (height, width), interpolation=cv2.INTER_AREA)
                 
                 # im = tf.image.resize_images(im, [height, width], align_corners=True)
@@ -91,41 +93,38 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
     # TODO: @Michael add SMOTE/ADANYS here
 
     # Smote
-    import imblearn.over_sampling as imb
-    sm = imb.SMOTE(k_neighbors=1)
+    
     print('Flattening image dataset to sample')
     dataset = dataset.flatten().reshape(6899,height*width*3)
-    print('Fitting samples...')
-    # sm = imb.ANADYS...
-    # x = [[[1, 2, 3]],
-    #      [[3, 4, 5, 6]],
-    #      [[1, 2]]]
-    # x = [[1, 2],
-    #      [1, 2],
-    #      [3, 4],
-    #      [7, 4],
-    #      [3, 6],
-    #      [4, 5]]
+    x = [[1, 2],
+         [1, 2],
+         [3, 4],
+         [7, 4],
+         [3, 6],
+         [4, 5],
+         [6, 2]]
     
-    # y = [1, 1, 2, 2, 2, 2]
-    #
-    dataset, labels = sm.fit_sample(dataset, labels)
-    # print(dataset.shape)
-    dataset = dataset.reshape(dataset.shape[0], height, width, 3)
-    # print(dataset)
-    # print(labels)
+    y = [1, 1, 2, 2, 2, 2, 1]
+    print('Fitting samples...')
+    if FLAGS.sampling == 'smote':
+        dataset, labels = imb.SMOTE(n_jobs=4).fit_resample(dataset, labels)
+    elif FLAGS.sampling == 'adasyn':
+        dataset, labels = imb.ADASYN(sampling_strategy='all', n_jobs=4).fit_resample(x, y)
+        # dataset, labels = sm.fit_resample(dataset, labels)
 
-    # numAirplane = 0
-    # nextOne = 0
-    # for l in labels:
-    #     if l[0] == 1:
-    #         numAirplane += 1
-    #     elif l[1] == 1:
-    #         nextOne += 1
-    # print(numAirplane)
-    # print(nextOne)
-    # print(len(labels))
-    # print(len(dataset))
+    dataset = dataset.reshape(dataset.shape[0], height, width, 3)
+
+    numAirplane = 0
+    nextOne = 0
+    for l in labels:
+        if l[0] == 1:
+            numAirplane += 1
+        elif l[1] == 1:
+            nextOne += 1
+    print(numAirplane)
+    print(nextOne)
+    print(len(labels))
+    print(len(dataset))
     print("Finished generating new data")
 
     # trainData, trainLabel, testData, testLabel
@@ -212,6 +211,7 @@ def main(unused_argv):
         cropAndPad = True
     else:
         cropAndPad = False
+
     print("Read natural images dataset")
     trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=False)
     # Different sizes we can try for the height/width of the modified images
@@ -223,8 +223,8 @@ def main(unused_argv):
 
 
 
-    train_file = os.path.join(DISTORTED_IMAGE_DIR, 'train_set_h{}w{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method))
-    test_file = os.path.join(DISTORTED_IMAGE_DIR, 'test_set_h{}w{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method))
+    train_file = os.path.join(DISTORTED_IMAGE_DIR, 'train_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method, FLAGS.sampling))
+    test_file = os.path.join(DISTORTED_IMAGE_DIR, 'test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method, FLAGS.sampling))
     
 
     # TODO: @Michael get the data augmentation call back into the pipeline
@@ -281,12 +281,57 @@ if __name__ == '__main__':
         type=int,
         default=32,
         help='width of resulting image'
-    )  
+    )
+    parser.add_argument(
+        '--sampling',
+        type=str,
+        default='smote',
+        help='default is smote. can also try adasyn'
+    )    
+
+
+
 
 
     FLAGS, unparsed = parser.parse_known_args()
-    print(FLAGS)
-    if FLAGS.method == 'cp' or FLAGS.method == 'r':
-        tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-    else:
-        print('method is incorrect.')
+
+    from collections import Counter
+    from sklearn.datasets import make_classification
+    from imblearn.over_sampling import ADASYN # doctest: +
+    
+    x, y = make_classification(n_classes=2, class_sep=2, \
+    weights=[0.1, 0.9], n_informative=3, n_redundant=1, flip_y=0, \
+     n_features=20, n_clusters_per_class=1, n_samples=1000, \
+     random_state=10)
+    
+    
+    print(x.shape)
+    print(y.shape)
+    # print(y[1])
+
+    print('Fitting samples...')
+    
+    x = []
+    y = []
+    for i in range(25):
+        x.append([np.random.random_integers(0, 10), np.random.random_integers(0,10)])
+        y.append(np.random.random_integers(0,4))
+    x = np.asarray(x)
+    
+    y = np.asarray(y)
+    print(x.shape)
+    print(y.shape)
+
+    print(x)
+    print(y)
+
+    dataset, labels = imb.ADASYN().fit_resample(x, y)
+    print(dataset, labels)
+
+    print(x.shape)
+    print(y.shape)
+    # print(FLAGS)
+    # if (FLAGS.method == 'cp' or FLAGS.method == 'r') and (FLAGS.sampling == 'smote' or FLAGS.sampling == 'adasyn'):
+    #     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    # else:
+    #     print('method is incorrect.')
