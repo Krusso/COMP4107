@@ -72,7 +72,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
                     im = cv2.copyMakeBorder(im, top_pad, bot_pad, 0, 0, cv2.BORDER_CONSTANT, value=0)
                 # print(im.shape)
             elif FLAGS.method == 'r':
-                im = cv2.resize(im, (height, width), interpolation=cv2.INTER_AREA)
+                im = cv2.resize(im, (height, width), interpolation=cv2.INTER_NEAREST)
                 
                 # im = tf.image.resize_images(im, [height, width], align_corners=True)
             # cv2.imshow('image',im)
@@ -191,11 +191,18 @@ def modify_image(trX, trY):
     distorted = []
     labels = []
     for i in range(len(trX)):
-        d_img = salt_pepper(np.rot90(trX[i], np.random.randint(1,4)))
+        cv2.imshow('original', trX[i])
+        d_img = cv2.cvtColor(trX[i], cv2.COLOR_BGR2HSV)
+        d_img[:,:,2] += 1
+        d_img = cv2.cvtColor(d_img, cv2.COLOR_HSV2BGR)
+
+        
+        cv2.imshow('distorted', d_img)
+        cv2.waitKey(0)
+        d_img = salt_pepper(np.rot90(d_img, np.random.randint(1,4)))
         distorted.append(d_img)
         
-        # cv2.imshow('distorted', d_img)
-        # cv2.waitKey(0)
+
 
     distorted.extend(trX)
     labels.extend(trY)
