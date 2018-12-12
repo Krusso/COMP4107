@@ -95,36 +95,24 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
     # Smote
     
     print('Flattening image dataset to sample')
-    dataset = dataset.flatten().reshape(6899,height*width*3)
-    x = [[1, 2],
-         [1, 2],
-         [3, 4],
-         [7, 4],
-         [3, 6],
-         [4, 5],
-         [6, 2]]
+    # dataset = dataset.flatten().reshape(6899,height*width*3)
+    # x = [[1, 2],
+    #      [1, 2],
+    #      [3, 4],
+    #      [7, 4],
+    #      [3, 6],
+    #      [4, 5],
+    #      [6, 2]]
     
-    y = [1, 1, 2, 2, 2, 2, 1]
-    print('Fitting samples...')
-    if FLAGS.sampling == 'smote':
-        dataset, labels = imb.SMOTE(n_jobs=4).fit_resample(dataset, labels)
-    elif FLAGS.sampling == 'adasyn':
-        dataset, labels = imb.ADASYN(sampling_strategy='all', n_jobs=4).fit_resample(x, y)
-        # dataset, labels = sm.fit_resample(dataset, labels)
+    # y = [1, 1, 2, 2, 2, 2, 1]
+    # print('Fitting samples...')
+    # if FLAGS.sampling == 'smote':
+    #     dataset, labels = imb.SMOTE(n_jobs=4).fit_resample(dataset, labels)
+    # elif FLAGS.sampling == 'adasyn':
+    #     dataset, labels = imb.ADASYN(sampling_strategy='all', n_jobs=4).fit_resample(x, y)
+    #     # dataset, labels = sm.fit_resample(dataset, labels)
 
-    dataset = dataset.reshape(dataset.shape[0], height, width, 3)
-
-    numAirplane = 0
-    nextOne = 0
-    for l in labels:
-        if l[0] == 1:
-            numAirplane += 1
-        elif l[1] == 1:
-            nextOne += 1
-    print(numAirplane)
-    print(nextOne)
-    print(len(labels))
-    print(len(dataset))
+    # dataset = dataset.reshape(dataset.shape[0], height, width, 3)
     print("Finished generating new data")
 
     # trainData, trainLabel, testData, testLabel
@@ -134,9 +122,13 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
     num_examples = dataset.shape[0]
     kfold = 10
     split_index = num_examples//kfold
+    if short:
+        return dataset[0:400], labels[0:400], \
+        dataset[400:600], labels[400:600]
 
-    return dataset[:split_index], labels[:split_index], \
-        dataset[split_index:], labels[split_index:]
+    dataset, labels = shuffle(dataset, labels)
+    return dataset[split_index:], labels[split_index:], \
+        dataset[:split_index], labels[:split_index]
 
 
 def _int64_feature(value):
@@ -181,6 +173,29 @@ def salt_pepper(image):
         out[i][j] = 0
     return out
 
+def random_hsv(image):
+    """
+        input: cv2 image type of BGR
+        output: a randomly adjusted hue, saturation and brightness of input image
+    """
+
+    d_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV, )
+    random_adjustment = float(np.random.random_integers(20,160))
+    d_img[:,:,0] += random_adjustment
+    # print("HUE BEFORE",d_img[:,:,0])
+    d_img[:,:,0] %= 180
+    # print("HUE AFTER", d_img[:,:,0])
+    random_adjustment = float(np.random.random_integers(20,225))
+    # print("b d_img 1", d_img[:,:,1])
+    d_img[:,:,1] *=  255
+    d_img[:,:,1] += random_adjustment
+    # print("m d_img 1", d_img[:,:,1])
+    d_img[:,:,1] %= 255
+    d_img[:,:,1] /= 255.0
+    # print("a d_img 1", d_img[:,:,1])
+    d_img[:,:,2] +=  float(np.random.random_integers(-15,15)/100)
+    d_img = cv2.cvtColor(d_img, cv2.COLOR_HSV2BGR)
+    return d_img
 
 def modify_image(trX, trY):
     """
@@ -191,21 +206,20 @@ def modify_image(trX, trY):
     distorted = []
     labels = []
     for i in range(len(trX)):
-        cv2.imshow('original', trX[i])
-        d_img = cv2.cvtColor(trX[i], cv2.COLOR_BGR2HSV)
-        d_img[:,:,2] += 1
-        d_img = cv2.cvtColor(d_img, cv2.COLOR_HSV2BGR)
-
-        
-        cv2.imshow('distorted', d_img)
-        cv2.waitKey(0)
-        d_img = salt_pepper(np.rot90(d_img, np.random.randint(1,4)))
-        distorted.append(d_img)
+        # cv2.imshow('original', trX[i])
+        for j in range(1,4):
+            
+            d_img = random_hsv(trX[i])
+            d_img = salt_pepper(np.rot90(d_img, j))
+            distorted.append(d_img)
+            labels.append(trY[i])
+            print(trY[i])
+            # cv2.imshow('distorted {}'.format(j), d_img)
+        # cv2.waitKey(0)
         
 
 
     distorted.extend(trX)
-    labels.extend(trY)
     labels.extend(trY)
     return shuffle(distorted, labels)
 
@@ -220,7 +234,7 @@ def main(unused_argv):
         cropAndPad = False
 
     print("Read natural images dataset")
-    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=False)
+    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=True)
     # Different sizes we can try for the height/width of the modified images
     # trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=32, cropAndPad=True)
     # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=False)
@@ -295,50 +309,8 @@ if __name__ == '__main__':
         default='smote',
         help='default is smote. can also try adasyn'
     )    
-
-
-
-
-
     FLAGS, unparsed = parser.parse_known_args()
-
-    from collections import Counter
-    from sklearn.datasets import make_classification
-    from imblearn.over_sampling import ADASYN # doctest: +
-    
-    x, y = make_classification(n_classes=2, class_sep=2, \
-    weights=[0.1, 0.9], n_informative=3, n_redundant=1, flip_y=0, \
-     n_features=20, n_clusters_per_class=1, n_samples=1000, \
-     random_state=10)
-    
-    
-    print(x.shape)
-    print(y.shape)
-    # print(y[1])
-
-    print('Fitting samples...')
-    
-    x = []
-    y = []
-    for i in range(25):
-        x.append([np.random.random_integers(0, 10), np.random.random_integers(0,10)])
-        y.append(np.random.random_integers(0,4))
-    x = np.asarray(x)
-    
-    y = np.asarray(y)
-    print(x.shape)
-    print(y.shape)
-
-    print(x)
-    print(y)
-
-    dataset, labels = imb.ADASYN().fit_resample(x, y)
-    print(dataset, labels)
-
-    print(x.shape)
-    print(y.shape)
-    # print(FLAGS)
-    # if (FLAGS.method == 'cp' or FLAGS.method == 'r') and (FLAGS.sampling == 'smote' or FLAGS.sampling == 'adasyn'):
-    #     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-    # else:
-    #     print('method is incorrect.')
+    if (FLAGS.method == 'cp' or FLAGS.method == 'r') and (FLAGS.sampling == 'smote' or FLAGS.sampling == 'adasyn'):
+        tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    else:
+        print('method is incorrect.')
