@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import itertools
+import argparse
 from SpatialPyramidPooling import SpatialPyramidPooling as spp
 
 
@@ -26,7 +27,7 @@ def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
     if spatial:
         w_fc = init_weights([1600, 625])  # FC 3^2 + 4^2 + 5^2 + 6^2 inputs, 625 outputs
     else:
-        w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+        w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 8 * 8 inputs, 625 outputs
 
     tf.summary.histogram("weights of fully connected 625 neuron first layer model5", w_fc)
     w_o = init_weights([625, 8])  # FC 625 inputs, 8 outputs (labels)
@@ -49,15 +50,14 @@ def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
 
     if spatial:
         # spatial pooling
-        #print(l3.get_shape())
-        #l3 = spatial_pyramid_pool(l3,
+        # print(l3.get_shape())
+        # l3 = spatial_pyramid_pool(l3,
         #                          int(l3.get_shape()[1]),
         #                          [int(l3.get_shape()[2]), int(l3.get_shape()[3])],
         #                          [8, 6, 4])
-        #print("spatial size", l3.get_shape())
-        layer = spp(dimensions=[3, 4, 5]) # results in (3^2 + 4^2 + 5^2) * feature outputs
+        # print("spatial size", l3.get_shape())
+        layer = spp(dimensions=[3, 4, 5])  # results in (3^2 + 4^2 + 5^2) * feature outputs
         l3 = layer.apply(l3)
-
 
     l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
     l3 = tf.nn.dropout(l3, p_keep_conv)
@@ -126,12 +126,37 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    '--method',
+    type=str,
+    default='r',
+    help='choose either r or cp where. r means resize to hxw size or cp means crop and pad to hxw'
+)
+parser.add_argument(
+    '--h',
+    type=int,
+    default=32,
+    help='height of resulting image'
+)
+parser.add_argument(
+    '--w',
+    type=int,
+    default=32,
+    help='width of resulting image'
+)
+
+
+FLAGS, unparsed = parser.parse_known_args()
+
 batch_size = 32
 
-train_set = input_fn(filenames=["distorted_images/train_set.tfrecords"],
-                     batch_size=batch_size)
+train_set = input_fn(
+    filenames=['distorted_images/train_set_h{}w{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method)],
+    batch_size=batch_size)
 
-test_set = input_fn(filenames=["distorted_images/test_set.tfrecords"],
+test_set = input_fn(filenames=['distorted_images/test_set_h{}w{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method)],
                     batch_size=32)
 # Training iterators
 train_iterator = train_set.make_initializable_iterator()
@@ -145,7 +170,7 @@ next_test_batch = test_iterator.get_next()
 train_init_op = train_iterator.initializer
 test_init_op = test_iterator.initializer
 
-X = tf.placeholder("float", [None, 32, 32, 3], name='image')
+X = tf.placeholder("float", [None, FLAGS.h, FLAGS.w, 3], name='image')
 Y = tf.placeholder("float", [None, 8], name='label')
 batch_accuracies = tf.placeholder("float", [None])
 
