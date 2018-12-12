@@ -292,7 +292,7 @@ for name, model in list(
                     plt.figure()
 
                     cnf_matrix = confusion_matrix(y_tests, y_preds)
-                    print("confusion matrix", cnf_matrix)
+                    print("confusion matrix", "\n", cnf_matrix)
                     if FLAGS.verbose:
                         plot_confusion_matrix(cnf_matrix, classes=["airplane",
                                                                    "car",
