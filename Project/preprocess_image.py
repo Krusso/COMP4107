@@ -15,9 +15,11 @@ from mpl_toolkits.mplot3d import Axes3D
 import imblearn.over_sampling as imb
 
 FLAGS = None
+DISTORTED_IMAGE_DIR = ".\distorted_images"
+FIGURE_DIR = './figures'
 
 
-def visualize_scatter(data_2d, label_ids, id_to_label_dict, figsize=(5, 5)):
+def visualize_scatter(filename, figure_name, data_2d, label_ids, id_to_label_dict, figsize=(5, 5)):
     plt.figure(figsize=figsize)
     plt.grid()
 
@@ -32,10 +34,13 @@ def visualize_scatter(data_2d, label_ids, id_to_label_dict, figsize=(5, 5)):
                     linewidth='1',
                     alpha=0.8,
                     label=id_to_label_dict[label_id])
-
+        
+    plt.title(figure_name)
     plt.legend(loc='best')
 
+    plt.savefig(filename)
     plt.show()
+    
 
 
 def show_tnse(data, labels, height, width):
@@ -49,13 +54,20 @@ def show_tnse(data, labels, height, width):
         6: 'motorbike',
         7: 'person'
     }
-
+    
+    if FLAGS.method =='r':
+        meth = 'nearest interpolation'
+    elif FLAGS.method =='cp':
+        meth = 'crop and pad'
+    else:
+        meth = 'none'
     data = data.flatten().reshape(len(data), height * width * 3)
 
     pca = PCA(n_components=50)
     pca_result = pca.fit_transform(data)
     pca_result_scaled = StandardScaler().fit_transform(pca_result)
-    visualize_scatter(pca_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
+    fn = "{}/pca_h_{}_w{}_h{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    visualize_scatter(fn, "PCA of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth),pca_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
 
     pca = PCA(n_components=50)
     pca_result = pca.fit_transform(data)
@@ -67,7 +79,9 @@ def show_tnse(data, labels, height, width):
     tsne_result = tsne.fit_transform(pca_result)
     tsne_result_scaled = StandardScaler().fit_transform(tsne_result)
 
-    visualize_scatter(tsne_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
+    fn = "{}/pca_tsne_{}_w{}_h{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    visualize_scatter(fn, "PCA and t-SNE of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth), tsne_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
+
 
     tsne = TSNE(n_components=3, perplexity=40.0)
     tsne_result = tsne.fit_transform(pca_result)
@@ -94,7 +108,9 @@ def show_tnse(data, labels, height, width):
     ax.set_xlim(-2.5, 2.5)
     ax.set_ylim(-2.5, 2.5)
     ax.set_zlim(-2.5, 2.5)
-
+    plt.title('t-SNE of dataset resized to {}x{} by {}'.format(FLAGS.h, FLAGS.w, meth))
+    fn = "{}/tsne_{}_w{}_h{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    plt.savefig(fn)
     plt.show()
 
 
@@ -172,9 +188,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
 
     print("Starting to generate synthetic data")
 
-    # TODO: @Michael add SMOTE/ADANYS here
-
-    # Smote
+    # Smote Upsampling and downsampling
 
     print('Flattening image dataset to sample')
     dataset = dataset.flatten().reshape(6899, height * width * 3)
@@ -225,6 +239,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
         dataset[400:600], labels[400:600]
 
     dataset, labels = shuffle(dataset, labels)
+    show_tnse(dataset[:2000], labels[:2000], height, width)
     return dataset[split_index:], labels[split_index:], \
         dataset[:split_index], labels[:split_index]
 
@@ -260,14 +275,11 @@ def salt_pepper(image):
     x = np.random.random_integers(0, row - 1, int(amount * row * col))
     y = np.random.random_integers(0, col - 1, int(amount * row * col))
     n = int(len(x) * s_vs_p)
-
     # salt
     for i, j in zip(x[:n], y[:n]):
-        # print(i, j)
         out[i][j] = 1
     # pepper
     for i, j in zip(x[n:], y[n:]):
-        # print(i, j)
         out[i][j] = 0
     return out
 
@@ -319,9 +331,11 @@ def modify_image(trX, trY):
 
 
 def main(unused_argv):
-    DISTORTED_IMAGE_DIR = ".\distorted_images"
     if not os.path.exists(DISTORTED_IMAGE_DIR):
         os.makedirs(DISTORTED_IMAGE_DIR)
+
+    if not os.path.exists(FIGURE_DIR):
+        os.makedirs(FIGURE_DIR)
 
     if FLAGS.method == 'cp':
         cropAndPad = True
