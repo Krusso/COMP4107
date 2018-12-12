@@ -4,8 +4,10 @@
 \usepackage{algorithm}
 \usepackage{float}
 \usepackage{color}
-
 \usepackage{multicol}
+
+\usepackage{graphicx}
+\graphicspath{ {./} }
 \title{Neural Networks Final Project: \\
 	\large{Comparing different data pre-processing techniques for convolution neural networks}}
 \author{Krystian Wojcicki, 101001444 \\ Michael Kuang, 101000485}
@@ -90,5 +92,14 @@ To over- and under-sample our dataset, we used the following methods from the im
 
 \section{References	}
 
+\section{Spatial Pyramid Pooling}
+
+CNNs require a fixed input image size such as 32x32, 64x64 or 128x128 as experimented with in this report. This requirement is human made and artificial while also potentially decreasing recognition accuracy due to loss of content while padding or distortion while resizing. The need to fixed size inputs is due to the fully-connected layer portion of a CNN, the convolution layers use a sliding window and operate correctly on any size input. However the fully-connected portion requires a fixed-size input. To get around this Kaiming et al [2015] introduced spatial pyyramid pooling (SPP), this pooling layer is added on top of the final convolution layer and generates fixed-length outputs regardless of the size of the feature maps given to it.  \\
+
+SPP builds on and improves the concept of Bag-of-Words (BoW), it does so but maintaining spatial information by pooling in local spatial bins. These spatial bins have sizes that are proportional to the image size meaning that the number of bins is fixed regardless of the image size.
+
+\includegraphics{spp}
+
+For training and testing a model with an SPP layer several approaches can be taken. We chose to investigate a multi-size training approach, here we create two fixed-size networks that share parameters. Then for training we alternated by providing the network 32x32 images for one epoch and then 64x64 epochs for the next epoch. 
 
 \end{document} 

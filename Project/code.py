@@ -5,61 +5,60 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import itertools
+import argparse
 from SpatialPyramidPooling import SpatialPyramidPooling as spp
 
 
 def init_weights(shape):
+    print("Creating shapes size", shape)
     return tf.Variable(tf.random_normal(shape, stddev=0.01))
 
 
-def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
+def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
     print("Creating model")
     w_1 = init_weights([3, 3, 3, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model5", w_1)
+    tf.summary.histogram("weights of first convolution layer 3x3x3x32 model", w_1)
 
     w_2 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of second convolution layer 3x3x32x32 model5", w_2)
+    tf.summary.histogram("weights of second convolution layer 3x3x32x32 model", w_2)
 
     w_3 = init_weights([3, 3, 32, 32])  # 3x3x3 conv, 32 outputs
-    tf.summary.histogram("weights of third convolution layer 3x3x32x32 model5", w_3)
+    tf.summary.histogram("weights of third convolution layer 3x3x32x32 model", w_3)
 
     if spatial:
         w_fc = init_weights([1600, 625])  # FC 3^2 + 4^2 + 5^2 + 6^2 inputs, 625 outputs
     else:
-        w_fc = init_weights([32 * 8 * 8, 625])  # FC 32 * 14 * 14 inputs, 625 outputs
+        w_fc = init_weights([int(32 * (height / 8) * (width / 8)), 625])  # FC 32 * 8 * 8 inputs, 625 outputs
 
     tf.summary.histogram("weights of fully connected 625 neuron first layer model5", w_fc)
     w_o = init_weights([625, 8])  # FC 625 inputs, 8 outputs (labels)
     tf.summary.histogram("weights of 8 neuron output layer model5", w_o)
 
-    l1a = tf.nn.relu(tf.nn.conv2d(X, w_1,  # X=(128,32,32,3) l1a shape=(?, 32, 32, 32)
+    l1a = tf.nn.relu(tf.nn.conv2d(X, w_1,  # X=(batchSize, height, width, 3) l1a shape=(?, height, width, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
 
-    l2a = tf.nn.relu(tf.nn.conv2d(l1a, w_2,  # l1a shape=(?, 32, 32, 32) l2a shape=(?, 32, 32, 32)
+    l1a = tf.nn.max_pool(l1a, ksize=[1, 2, 2, 1],  # l1 shape=(?, height/2, width/2, 32)
+                         strides=[1, 2, 2, 1], padding='SAME')
+
+    l2a = tf.nn.relu(tf.nn.conv2d(l1a, w_2,  # l2a shape=(?, height/2, width/2, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
 
-    l2 = tf.nn.max_pool(l2a, ksize=[1, 2, 2, 1],  # l1 shape=(?, 8, 8, 32)
-                        strides=[1, 2, 2, 1], padding='SAME')
-    l2 = tf.nn.dropout(l2, p_keep_conv)
-
-    l3a = tf.nn.relu(tf.nn.conv2d(l2, w_3,
-                                  strides=[1, 1, 1, 1], padding='SAME'))
-    l3 = tf.nn.max_pool(l3a, ksize=[1, 2, 2, 1],
+    l2 = tf.nn.max_pool(l2a, ksize=[1, 2, 2, 1],  # l2 shape=(?, height/4, width/4, 32)
                         strides=[1, 2, 2, 1], padding='SAME')
 
+    l3a = tf.nn.relu(tf.nn.conv2d(l2, w_3,  # l2a shape=(?, height/4, width/4, 32)
+                                  strides=[1, 1, 1, 1], padding='SAME'))
+
+    # either do spatial pooling or regular max pooling
     if spatial:
         # spatial pooling
-        #print(l3.get_shape())
-        #l3 = spatial_pyramid_pool(l3,
-        #                          int(l3.get_shape()[1]),
-        #                          [int(l3.get_shape()[2]), int(l3.get_shape()[3])],
-        #                          [8, 6, 4])
-        #print("spatial size", l3.get_shape())
-        layer = spp(dimensions=[3, 4, 5]) # results in (3^2 + 4^2 + 5^2) * feature outputs
-        l3 = layer.apply(l3)
+        layer = spp(dimensions=[3, 4, 5])  # results in (3^2 + 4^2 + 5^2) * feature outputs
+        l3 = layer.apply(l3a)
+    else:
+        l3 = tf.nn.max_pool(l3a, ksize=[1, 2, 2, 1],  # l2a shape=(?, height/8, width/8, 32)
+                            strides=[1, 2, 2, 1], padding='SAME')
 
-
-    l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
+    l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 32 * (height / 8) * (width / 8))
     l3 = tf.nn.dropout(l3, p_keep_conv)
 
     l4 = tf.nn.relu(tf.matmul(l3, w_fc))
@@ -70,22 +69,22 @@ def create_model(X, p_keep_conv, p_keep_hidden, spatial=False):
     return pyx
 
 
-def parse_example(example):
+def parse_example(example, height, width):
     features = {'image_raw': tf.FixedLenFeature((), tf.string, default_value=""),
                 'label': tf.FixedLenFeature((), tf.int64, default_value=0)}
     parsed_features = tf.parse_single_example(example, features)
 
     image = tf.decode_raw(parsed_features['image_raw'], tf.float32)
-    image = tf.reshape(image, [32, 32, 3])
+    image = tf.reshape(image, [height, width, 3])
 
     label = tf.cast(parsed_features['label'], tf.int64)
     return image, tf.one_hot(label, 8)
 
 
-def input_fn(filenames, shuffle_buff=100, batch_size=128):
+def input_fn(filenames, height, width, shuffle_buff=100, batch_size=128):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.shuffle(shuffle_buff)
-    dataset = dataset.map(lambda example: parse_example(example))
+    dataset = dataset.map(lambda example: parse_example(example, height, width))
     dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
     return dataset
 
@@ -104,8 +103,6 @@ def plot_confusion_matrix(cm, classes,
         print("Normalized confusion matrix")
     else:
         print('Confusion matrix, without normalization')
-
-    print("confusion matrix", cm)
 
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
@@ -126,15 +123,68 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    '--spatial',
+    type=bool,
+    default=False,
+    help='either True or False'
+)
+
+parser.add_argument(
+    '--verbose',
+    type=bool,
+    default=False,
+    help='either True or False'
+)
+
+parser.add_argument(
+    '--method',
+    type=str,
+    default='r',
+    help='choose either r or cp where. r means resize to hxw size or cp means crop and pad to hxw'
+)
+
+parser.add_argument(
+    '--h',
+    type=int,
+    default=32,
+    help='height of resulting image'
+)
+
+parser.add_argument(
+    '--w',
+    type=int,
+    default=32,
+    help='width of resulting image'
+)
+
+parser.add_argument(
+    '--sampling',
+    type=str,
+    default='smote',
+    help='default is smote. can also try adasyn or none'
+)
+
+FLAGS, unparsed = parser.parse_known_args()
+
 batch_size = 32
-height=32
-width=32
 
-train_set = input_fn(filenames=["distorted_images/train_set.tfrecords"],
-                     batch_size=batch_size)
+train_set = input_fn(
+    height=FLAGS.h,
+    width=FLAGS.w,
+    filenames=[
+        'distorted_images/train_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
+    batch_size=batch_size)
 
-test_set = input_fn(filenames=["distorted_images/test_set.tfrecords"],
-                    batch_size=32)
+test_set = input_fn(
+    height=FLAGS.h,
+    width=FLAGS.w,
+    filenames=[
+        'distorted_images/test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
+    batch_size=32)
+
 # Training iterators
 train_iterator = train_set.make_initializable_iterator()
 test_iterator = test_set.make_initializable_iterator()
@@ -147,7 +197,7 @@ next_test_batch = test_iterator.get_next()
 train_init_op = train_iterator.initializer
 test_init_op = test_iterator.initializer
 
-X = tf.placeholder("float", [None, 32, 32, 3], name='image')
+X = tf.placeholder("float", [None, FLAGS.h, FLAGS.w, 3], name='image')
 Y = tf.placeholder("float", [None, 8], name='label')
 batch_accuracies = tf.placeholder("float", [None])
 
@@ -162,7 +212,8 @@ while True:
     else:
         break
 
-for name, model in list([("Model", create_model(X, p_keep_conv, p_keep_hidden, spatial=True))]):
+for name, model in list(
+        [("Model", create_model(X, p_keep_conv, p_keep_hidden, FLAGS.h, FLAGS.w, spatial=FLAGS.spatial))]):
     print("Starting model", name)
     py_x = model
 
@@ -241,16 +292,18 @@ for name, model in list([("Model", create_model(X, p_keep_conv, p_keep_hidden, s
                     plt.figure()
 
                     cnf_matrix = confusion_matrix(y_tests, y_preds)
-                    plot_confusion_matrix(cnf_matrix, classes=["airplane",
-                                                               "car",
-                                                               "cat",
-                                                               "dog",
-                                                               "flower",
-                                                               "fruit",
-                                                               "motorbike",
-                                                               "person"],
-                                          title='Confusion matrix epoch {}'.format(epoch))
-                    plt.show()
+                    print("confusion matrix", cnf_matrix)
+                    if FLAGS.verbose:
+                        plot_confusion_matrix(cnf_matrix, classes=["airplane",
+                                                                   "car",
+                                                                   "cat",
+                                                                   "dog",
+                                                                   "flower",
+                                                                   "fruit",
+                                                                   "motorbike",
+                                                                   "person"],
+                                              title='Confusion matrix epoch {}'.format(epoch))
+                        plt.show()
                     break
 
             summary_writer.flush()
