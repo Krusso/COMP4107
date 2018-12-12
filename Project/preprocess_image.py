@@ -9,7 +9,7 @@ import tarfile
 import cv2
 import glob
 from sklearn.utils import shuffle
-
+from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
@@ -43,6 +43,8 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
         for filename in glob.glob(filepath):
 
             im = cv2.imread(filename, cv2.IMREAD_COLOR)
+            im = im.astype(np.float32)
+            im = np.multiply(im, 1.0/255.0)
             h, w, c = im.shape
             # cv2.imshow('original',im)
             # print(im.shape)
@@ -85,11 +87,15 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
     print("Done reading images")
 
     print("Starting to generate synthetic data")
+
     # TODO: @Michael add SMOTE/ADANYS here
 
     # Smote
-    # import imblearn.over_sampling as imb
-    # sm = imb.SMOTE(k_neighbors=1)
+    import imblearn.over_sampling as imb
+    sm = imb.SMOTE(k_neighbors=1)
+    print('Flattening image dataset to sample')
+    dataset = dataset.flatten().reshape(6899,height*width*3)
+    print('Fitting samples...')
     # sm = imb.ANADYS...
     # x = [[[1, 2, 3]],
     #      [[3, 4, 5, 6]],
@@ -100,19 +106,38 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
     #      [7, 4],
     #      [3, 6],
     #      [4, 5]]
-    #
+    
     # y = [1, 1, 2, 2, 2, 2]
     #
-    # X_train_res, y_train_res = sm.fit_sample(x, y)
-    # print(X_train_res)
-    # print(y_train_res)
+    dataset, labels = sm.fit_sample(dataset, labels)
+    # print(dataset.shape)
+    dataset = dataset.reshape(dataset.shape[0], height, width, 3)
+    # print(dataset)
+    # print(labels)
 
+    # numAirplane = 0
+    # nextOne = 0
+    # for l in labels:
+    #     if l[0] == 1:
+    #         numAirplane += 1
+    #     elif l[1] == 1:
+    #         nextOne += 1
+    # print(numAirplane)
+    # print(nextOne)
+    # print(len(labels))
+    # print(len(dataset))
     print("Finished generating new data")
 
     # trainData, trainLabel, testData, testLabel
     # TODO: @Michael/@Krystian shuffle the data before returning it and set the bounds for training/testing correctly
-    return dataset[0:400], labels[0:400], \
-        dataset[400:600], labels[400:600]
+    
+    #num examples
+    num_examples = dataset.shape[0]
+    kfold = 10
+    split_index = num_examples//kfold
+
+    return dataset[:split_index], labels[:split_index], \
+        dataset[split_index:], labels[split_index:]
 
 
 def _int64_feature(value):
@@ -140,9 +165,8 @@ def _write_example(image, label):
 
 def salt_pepper(image):
     row, col, ch = image.shape
-
     s_vs_p = 0.5
-    amount = 0.02
+    amount = 0.05
     out = np.copy(image)
     x = np.random.random_integers(0, row - 1, int(amount * row * col))
     y = np.random.random_integers(0, col - 1, int(amount * row * col))
@@ -160,30 +184,20 @@ def salt_pepper(image):
 
 
 def modify_image(trX, trY):
-    # Distort the images
-    # with tf.Session() as sess:
-    # for each image, we add one distortion
+    """
+        Distort each image by randomly rotating 90 degrees and adding pepper&salt to the image
+        input: image and labels
+        output: shuffled modified images + original images, labels
+    """
     distorted = []
     labels = []
-    # for each image we rotate 90 degrees
     for i in range(len(trX)):
-        # if i % 1000 == 0:
-        print("on image", i)
-
-        # d_img = sess.run(tf.image.random_flip_left_right(
-        #                trX[i].transpose(1, 2, 0))).transpose(2, 0, 1)
-        d_img = trX[i]
-
-        d_img = salt_pepper(np.rot90(d_img.transpose(1, 2, 0), np.random.randint(0, 4))).transpose(2, 0, 1)
-
+        d_img = salt_pepper(np.rot90(trX[i], np.random.randint(1,4)))
         distorted.append(d_img)
+        
+        # cv2.imshow('distorted', d_img)
+        # cv2.waitKey(0)
 
-        # print(d_img.shape)
-        # img = plt.imshow(d_img.transpose(1, 2, 0))
-        # plt.show()
-        # img = plt.imshow(trX[i].transpose(1, 2, 0))
-        # plt.show()
-        # break
     distorted.extend(trX)
     labels.extend(trY)
     labels.extend(trY)
@@ -198,8 +212,8 @@ def main(unused_argv):
         cropAndPad = True
     else:
         cropAndPad = False
-
-    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=True)
+    print("Read natural images dataset")
+    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=False)
     # Different sizes we can try for the height/width of the modified images
     # trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=32, cropAndPad=True)
     # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=False)
@@ -211,11 +225,13 @@ def main(unused_argv):
 
     train_file = os.path.join(DISTORTED_IMAGE_DIR, 'train_set_h{}w{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method))
     test_file = os.path.join(DISTORTED_IMAGE_DIR, 'test_set_h{}w{}_{}.tfrecords'.format(FLAGS.h,FLAGS.w, FLAGS.method))
-    print("Read natural images dataset")
+    
 
     # TODO: @Michael get the data augmentation call back into the pipeline
-    # modified_images, labels = modify_image(trX, trY)
-    # print("Completed Modification of Images")
+    trX, trY = modify_image(trX, trY)
+    print("Completed Modification of Images")
+
+    
 
     n = len(trX)
     train_set = []
@@ -249,7 +265,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--type',
+        '--method',
         type=str,
         default='r',
         help='choose either r or cp where. r means resize to hxw size or cp means crop and pad to hxw'
@@ -270,7 +286,7 @@ if __name__ == '__main__':
 
     FLAGS, unparsed = parser.parse_known_args()
     print(FLAGS)
-    if FLAGS.method != 'cp' or FLAGS.method != 'r':
-        print('method is incorrect.')
-    else:
+    if FLAGS.method == 'cp' or FLAGS.method == 'r':
         tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    else:
+        print('method is incorrect.')
