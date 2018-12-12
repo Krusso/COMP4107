@@ -49,15 +49,16 @@ def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
     l3a = tf.nn.relu(tf.nn.conv2d(l2, w_3,  # l2a shape=(?, height/4, width/4, 32)
                                   strides=[1, 1, 1, 1], padding='SAME'))
 
-    l3 = tf.nn.max_pool(l3a, ksize=[1, 2, 2, 1],  # l2a shape=(?, height/8, width/8, 32)
-                        strides=[1, 2, 2, 1], padding='SAME')
-
+    # either do spatial pooling or regular max pooling
     if spatial:
         # spatial pooling
         layer = spp(dimensions=[3, 4, 5])  # results in (3^2 + 4^2 + 5^2) * feature outputs
-        l3 = layer.apply(l3)
+        l3 = layer.apply(l3a)
+    else:
+        l3 = tf.nn.max_pool(l3a, ksize=[1, 2, 2, 1],  # l2a shape=(?, height/8, width/8, 32)
+                            strides=[1, 2, 2, 1], padding='SAME')
 
-    l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 14x14x32)
+    l3 = tf.reshape(l3, [-1, w_fc.get_shape().as_list()[0]])  # reshape to (?, 32 * (height / 8) * (width / 8))
     l3 = tf.nn.dropout(l3, p_keep_conv)
 
     l4 = tf.nn.relu(tf.matmul(l3, w_fc))
@@ -68,22 +69,22 @@ def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
     return pyx
 
 
-def parse_example(example):
+def parse_example(example, height, width):
     features = {'image_raw': tf.FixedLenFeature((), tf.string, default_value=""),
                 'label': tf.FixedLenFeature((), tf.int64, default_value=0)}
     parsed_features = tf.parse_single_example(example, features)
 
     image = tf.decode_raw(parsed_features['image_raw'], tf.float32)
-    image = tf.reshape(image, [32, 32, 3])
+    image = tf.reshape(image, [height, width, 3])
 
     label = tf.cast(parsed_features['label'], tf.int64)
     return image, tf.one_hot(label, 8)
 
 
-def input_fn(filenames, shuffle_buff=100, batch_size=128):
+def input_fn(filenames, height, width, shuffle_buff=100, batch_size=128):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.shuffle(shuffle_buff)
-    dataset = dataset.map(lambda example: parse_example(example))
+    dataset = dataset.map(lambda example: parse_example(example, height, width))
     dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
     return dataset
 
@@ -171,12 +172,17 @@ FLAGS, unparsed = parser.parse_known_args()
 batch_size = 32
 
 train_set = input_fn(
+    height=FLAGS.h,
+    width=FLAGS.w,
     filenames=[
         'distorted_images/train_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
     batch_size=batch_size)
 
-test_set = input_fn(filenames=[
-    'distorted_images/test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
+test_set = input_fn(
+    height=FLAGS.h,
+    width=FLAGS.w,
+    filenames=[
+        'distorted_images/test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
     batch_size=32)
 
 # Training iterators
