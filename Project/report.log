@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6840 64-bit) (preloaded format=pdflatex 2018.12.11)  12 DEC 2018 14:58
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6840 64-bit) (preloaded format=pdflatex 2018.12.11)  12 DEC 2018 15:15
 entering extended mode
 **./report.tex
 (report.tex
@@ -319,7 +319,7 @@ LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 41.
 
 [2]
-Underfull \hbox (badness 10000) in paragraph at lines 97--98
+Underfull \hbox (badness 10000) in paragraph at lines 73--74
 
  []
 
@@ -327,9 +327,9 @@ Underfull \hbox (badness 10000) in paragraph at lines 97--98
 <spp.png, id=18, 308.65312pt x 212.29312pt>
 File: spp.png Graphic file (type png)
 <use spp.png>
-Package pdftex.def Info: spp.png  used on input line 101.
+Package pdftex.def Info: spp.png  used on input line 77.
 (pdftex.def)             Requested size: 308.65236pt x 212.2926pt.
- [4] [5 <./spp.png>] (report.aux) ) 
+ [4 <./spp.png>] [5] (report.aux) ) 
 Here is how much of TeX's memory you used:
  2655 strings out of 492970
  36969 string characters out of 3126149
@@ -337,7 +337,7 @@ Here is how much of TeX's memory you used:
  6479 multiletter control sequences out of 15000+200000
  10150 words of font info for 38 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,6n,27p,768b,219s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 41i,6n,27p,783b,219s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Users/mkuang/AppData/Local/Programs/MiKT
 eX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/mkuang/AppData/Local
 /Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/mkuang
@@ -347,7 +347,7 @@ cmr12.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public
 /amsfonts/cm/cmr17.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts
 /type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/mkuang/AppData/Local/Programs/Mi
 KTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on report.pdf (5 pages, 131694 bytes).
+Output written on report.pdf (5 pages, 131783 bytes).
 PDF statistics:
  49 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

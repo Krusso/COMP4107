@@ -85,7 +85,7 @@ def input_fn(filenames, height, width, shuffle_buff=100, batch_size=128):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.shuffle(shuffle_buff)
     dataset = dataset.map(lambda example: parse_example(example, height, width))
-    dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
+    dataset = dataset.batch(batch_size)
     return dataset
 
 
@@ -216,8 +216,8 @@ for name, model in list(
         [("Model", create_model(X, p_keep_conv, p_keep_hidden, FLAGS.h, FLAGS.w, spatial=FLAGS.spatial))]):
     print("Starting model", name)
     py_x = model
-
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, labels=Y))
+
     train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
     predict_op = tf.argmax(py_x, 1)
 
@@ -231,15 +231,17 @@ for name, model in list(
         testing_accuracy = tf.summary.scalar('accuracy', mean_accuracy)
         merged_testing_accuracy = tf.summary.merge([testing_accuracy])
 
-        result_dir = './logs/attempt_{}/{}'.format(attempt, name)
-        summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
+        result_dir = './logs/attempt_{}/h{}w{}_{}_{}'.format(attempt, FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+        train_dir = './logs/attempt_{}/train'.format(attempt)
 
+        summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
         # you need to initialize all variables
         tf.global_variables_initializer().run()
 
         for epoch in range(50):
             # Initialize the training iterator to consume training data
             sess.run(train_init_op)
+            train_accuracy = []
             while True:
                 # as long as the iterator has not hit the end, continue to consume training data
                 try:
@@ -248,9 +250,12 @@ for name, model in list(
                     train_summary, _ = sess.run([merged, train_op], feed_dict={X: images,
                                                                                Y: labels,
                                                                                p_keep_conv: 0.8, p_keep_hidden: 0.5})
+
                 except tf.errors.OutOfRangeError:
+
                     # end of training epoch
                     summary_writer.add_summary(train_summary, epoch)
+                    # train_sw.add_summary(train_accuracy_summary, epoch)
                     break
 
             # Initialize the validation iterator to consume validation data
@@ -272,6 +277,7 @@ for name, model in list(
 
                     test_batch_accuracy = np.mean(np.argmax(labels, axis=1) == y_pred)
                     total_accuracy.append(test_batch_accuracy)
+
                 except tf.errors.OutOfRangeError:
                     test_accuracy_summary, m_accuracy = sess.run([merged_testing_accuracy, mean_accuracy],
                                                                  feed_dict={batch_accuracies: total_accuracy})
@@ -293,16 +299,20 @@ for name, model in list(
 
                     cnf_matrix = confusion_matrix(y_tests, y_preds)
                     print("confusion matrix", "\n", cnf_matrix)
+
+                    plot_confusion_matrix(cnf_matrix, classes=["airplane",
+                                                               "car",
+                                                               "cat",
+                                                               "dog",
+                                                               "flower",
+                                                               "fruit",
+                                                               "motorbike",
+                                                               "person"],
+                                          title='Confusion matrix epoch {}'.format(epoch))
+                    fn = './figures/cm_h{}_w{}_{}_{}_e{}'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling, epoch)
+                    plt.savefig(fn)
+
                     if FLAGS.verbose:
-                        plot_confusion_matrix(cnf_matrix, classes=["airplane",
-                                                                   "car",
-                                                                   "cat",
-                                                                   "dog",
-                                                                   "flower",
-                                                                   "fruit",
-                                                                   "motorbike",
-                                                                   "person"],
-                                              title='Confusion matrix epoch {}'.format(epoch))
                         plt.show()
                     break
 
