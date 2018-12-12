@@ -237,7 +237,7 @@ for name, model in list(
         # you need to initialize all variables
         tf.global_variables_initializer().run()
 
-        for epoch in range(15):
+        for epoch in range(50):
             # Initialize the training iterator to consume training data
             sess.run(train_init_op)
             while True:
