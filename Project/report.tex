@@ -5,8 +5,9 @@
 \usepackage{float}
 \usepackage{color}
 \usepackage{multicol}
-
+\usepackage{forloop}
 \usepackage{graphicx}
+\usepackage[margin=1.0in]{geometry}
 \graphicspath{ {./} }
 \title{Neural Networks Final Project: \\
 	\large{Comparing different data pre-processing techniques for convolution neural networks}}
@@ -91,9 +92,60 @@ To over- and under-sample our dataset, we used the following methods from the im
 	
 \end{itemize}
 
-
-
 \section{Results}
+
+\begin{figure}[!htb]
+	\begin{center}
+		\includegraphics[width=0.32\textwidth]{./figures/pca_h32_w32_r_none.png}
+		\includegraphics[width= 0.32\textwidth]{./figures/pca_tsne_h32_w32_r_none.png}
+		\includegraphics[width= 0.32\textwidth]{./figures/tsne_h32_w32_r_none.png}
+		\caption{Visualization of 2000 randomly picked data points for 32x32 rescaled images}
+	\end{center}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{center}
+		\includegraphics[width=0.32\textwidth]{./figures/cm_h32_w32_r_none_e0.png}
+		\includegraphics[width= 0.32\textwidth]{./figures/cm_h32_w32_r_none_e20.png}
+		\includegraphics[width= 0.32\textwidth]{./figures/cm_h32_w32_r_none_e49.png}
+		\caption{Confusion Matrices of unbalanced resized images to 32x32 by scaling}
+	\end{center}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{center}
+	\includegraphics[width=0.32\textwidth]{./figures/pca_h64_w64_r_none.png}
+	\includegraphics[width= 0.32\textwidth]{./figures/pca_tsne_h64_w64_r_none.png}
+	\includegraphics[width= 0.32\textwidth]{./figures/tsne_h64_w64_r_none.png}
+	\caption{Visualization of 2000 randomly picked data points for 64x64 rescaled images}
+	\end{center}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{center}
+	\includegraphics[width=0.32\textwidth]{./figures/cm_h64_w64_r_none_e0.png}
+	\includegraphics[width= 0.32\textwidth]{./figures/cm_h64_w64_r_none_e20.png}
+	\includegraphics[width= 0.32\textwidth]{./figures/cm_h64_w64_r_none_e49.png}
+	\caption{Confusion Matrices of unbalanced resized images to 64x64 by scaling}
+	\end{center}
+\end{figure}
+
+
+
+\begin{figure}[!htb]
+	\begin{center}
+		\includegraphics[width=0.64\textwidth]{./figures/acc_h64_w64_r_none.png}
+	\end{center}
+	\caption{Tensorboard visualization of testing accuracy}
+\end{figure}
+%\begin{figure}
+%	\forloop{i}{48}{\value{i} < 50}%
+%	{%
+%		\includegraphics*[width=40mm]{./figures/cm_h64_w64_r_none_e\thei.png}
+%	}
+%\end{figure}
+
+\newpage
 
 \section{Analysis}
 

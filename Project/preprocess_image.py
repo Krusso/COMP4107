@@ -66,7 +66,7 @@ def show_tnse(data, labels, height, width):
     pca = PCA(n_components=50)
     pca_result = pca.fit_transform(data)
     pca_result_scaled = StandardScaler().fit_transform(pca_result)
-    fn = "{}/pca_h_{}_w{}_h{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    fn = "{}/pca_h{}_w{}_{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
     visualize_scatter(fn, "PCA of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth),pca_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
 
     pca = PCA(n_components=50)
@@ -79,7 +79,7 @@ def show_tnse(data, labels, height, width):
     tsne_result = tsne.fit_transform(pca_result)
     tsne_result_scaled = StandardScaler().fit_transform(tsne_result)
 
-    fn = "{}/pca_tsne_{}_w{}_h{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    fn = "{}/pca_tsne_h{}_w{}_{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
     visualize_scatter(fn, "PCA and t-SNE of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth), tsne_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
 
 
@@ -109,7 +109,7 @@ def show_tnse(data, labels, height, width):
     ax.set_ylim(-2.5, 2.5)
     ax.set_zlim(-2.5, 2.5)
     plt.title('t-SNE of dataset resized to {}x{} by {}'.format(FLAGS.h, FLAGS.w, meth))
-    fn = "{}/tsne_{}_w{}_h{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    fn = "{}/tsne_h{}_w{}_{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
     plt.savefig(fn)
     plt.show()
 

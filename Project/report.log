@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6840 64-bit) (preloaded format=pdflatex 2018.12.11)  12 DEC 2018 15:15
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6840 64-bit) (preloaded format=pdflatex 2018.12.11)  12 DEC 2018 19:49
 entering extended mode
 **./report.tex
 (report.tex
@@ -179,6 +179,10 @@ Package: multicol 2018/04/20 v1.8s multicolumn formatting (FMi)
 \colbreak@box=\box55
 \mc@col@check@num=\count110
 )
+("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\forloop\forloop.s
+ty"
+Package: forloop 2006/09/18 v3.0 For Loops for LaTeX
+)
 ("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\graphics\graphicx
 .sty"
 Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
@@ -204,36 +208,68 @@ Package graphics Info: Driver file: pdftex.def on input line 99.
 )
 \Gin@req@height=\dimen121
 \Gin@req@width=\dimen122
-) (report.aux)
+)
+("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\geometry\geometry
+.sty"
+Package: geometry 2018/04/16 v5.8 Page Geometry
+
+("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\generic\oberdiek\ifpdf.
+sty"
+Package: ifpdf 2018/09/07 v3.3 Provides the ifpdf switch
+)
+("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\generic\oberdiek\ifvtex
+.sty"
+Package: ifvtex 2016/05/16 v1.6 Detect VTeX and its facilities (HO)
+Package ifvtex Info: VTeX not detected.
+)
+("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\generic\ifxetex\ifxetex
+.sty"
+Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
+)
+\Gm@cnth=\count111
+\Gm@cntv=\count112
+\c@Gm@tempcnt=\count113
+\Gm@bindingoffset=\dimen123
+\Gm@wd@mp=\dimen124
+\Gm@odd@mp=\dimen125
+\Gm@even@mp=\dimen126
+\Gm@layoutwidth=\dimen127
+\Gm@layoutheight=\dimen128
+\Gm@layouthoffset=\dimen129
+\Gm@layoutvoffset=\dimen130
+\Gm@dimlist=\toks23
+
+("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\geometry\geometry
+.cfg")) (report.aux)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 17.
+LaTeX Font Info:    ... okay on input line 17.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 17.
+LaTeX Font Info:    ... okay on input line 17.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 17.
+LaTeX Font Info:    ... okay on input line 17.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 17.
+LaTeX Font Info:    ... okay on input line 17.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 17.
+LaTeX Font Info:    ... okay on input line 17.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 17.
+LaTeX Font Info:    ... okay on input line 17.
 
 ("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\context\base\supp-pdf.m
 kii"
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count111
-\scratchdimen=\dimen123
+\scratchcounter=\count114
+\scratchdimen=\dimen131
 \scratchbox=\box56
-\nofMPsegments=\count112
-\nofMParguments=\count113
-\everyMPshowfont=\toks23
-\MPscratchCnt=\count114
-\MPscratchDim=\dimen124
-\MPnumerator=\count115
-\makeMPintoPDFobject=\count116
-\everyMPtoPDFconversion=\toks24
+\nofMPsegments=\count115
+\nofMParguments=\count116
+\everyMPshowfont=\toks24
+\MPscratchCnt=\count117
+\MPscratchDim=\dimen132
+\MPnumerator=\count118
+\makeMPintoPDFobject=\count119
+\everyMPtoPDFconversion=\toks25
 )
 ("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\oberdiek\epstopdf
 -base.sty"
@@ -281,11 +317,6 @@ Package etexcmds Info: Could not find \expanded.
 cmds.sty"
 Package: pdftexcmds 2018/09/10 v0.29 Utility functions of pdfTeX for LuaTeX (HO
 )
-
-("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\generic\oberdiek\ifpdf.
-sty"
-Package: ifpdf 2018/09/07 v3.3 Provides the ifpdf switch
-)
 Package pdftexcmds Info: LuaTeX not detected.
 Package pdftexcmds Info: \pdf@primitive is available.
 Package pdftexcmds Info: \pdf@ifprimitive is available.
@@ -298,58 +329,175 @@ Package grfext Info: Graphics extension search list:
 G,.JBIG2,.JB2,.eps]
 (grfext)             \AppendGraphicsExtensions on input line 456.
 )
-LaTeX Font Info:    Try loading font information for U+msa on input line 17.
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+*geometry* verbose mode - [ preamble ] result:
+* driver: pdftex
+* paper: <default>
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(72.26999pt, 469.75502pt, 72.26999pt)
+* v-part:(T,H,B)=(72.26999pt, 650.43001pt, 72.26999pt)
+* \paperwidth=614.295pt
+* \paperheight=794.96999pt
+* \textwidth=469.75502pt
+* \textheight=650.43001pt
+* \oddsidemargin=0.0pt
+* \evensidemargin=0.0pt
+* \topmargin=-37.0pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=10.0pt
+* \footskip=30.0pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
+LaTeX Font Info:    Try loading font information for U+msa on input line 18.
 ("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\amsfonts\umsa.fd"
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 17.
+LaTeX Font Info:    Try loading font information for U+msb on input line 18.
  ("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\amsfonts\umsb.fd
 "
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1
 
 {C:/Users/mkuang/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 41.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 42.
 
 ("C:\Users\mkuang\AppData\Local\Programs\MiKTeX 2.9\tex\latex\base\omscmr.fd"
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 41.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 42.
 
 [2]
-Underfull \hbox (badness 10000) in paragraph at lines 73--74
+Underfull \hbox (badness 10000) in paragraph at lines 74--75
 
  []
 
-[3]
-<spp.png, id=18, 308.65312pt x 212.29312pt>
+<spp.png, id=15, 308.65312pt x 212.29312pt>
 File: spp.png Graphic file (type png)
 <use spp.png>
-Package pdftex.def Info: spp.png  used on input line 77.
+Package pdftex.def Info: spp.png  used on input line 78.
 (pdftex.def)             Requested size: 308.65236pt x 212.2926pt.
- [4 <./spp.png>] [5] (report.aux) ) 
+[3 <./spp.png>]
+<./figures/pca_h32_w32_r_none.png, id=21, 361.35pt x 361.35pt>
+File: ./figures/pca_h32_w32_r_none.png Graphic file (type png)
+<use ./figures/pca_h32_w32_r_none.png>
+Package pdftex.def Info: ./figures/pca_h32_w32_r_none.png  used on input line 9
+9.
+(pdftex.def)             Requested size: 150.32504pt x 150.32687pt.
+<./figures/pca_tsne_h32_w32_r_none.png, id=22, 361.35pt x 361.35pt>
+File: ./figures/pca_tsne_h32_w32_r_none.png Graphic file (type png)
+<use ./figures/pca_tsne_h32_w32_r_none.png>
+Package pdftex.def Info: ./figures/pca_tsne_h32_w32_r_none.png  used on input l
+ine 100.
+(pdftex.def)             Requested size: 150.32504pt x 150.32687pt.
+<./figures/tsne_h32_w32_r_none.png, id=23, 722.7pt x 722.7pt>
+File: ./figures/tsne_h32_w32_r_none.png Graphic file (type png)
+<use ./figures/tsne_h32_w32_r_none.png>
+Package pdftex.def Info: ./figures/tsne_h32_w32_r_none.png  used on input line 
+101.
+(pdftex.def)             Requested size: 150.32504pt x 150.32687pt.
+<./figures/cm_h32_w32_r_none_e0.png, id=24, 462.528pt x 346.896pt>
+File: ./figures/cm_h32_w32_r_none_e0.png Graphic file (type png)
+<use ./figures/cm_h32_w32_r_none_e0.png>
+Package pdftex.def Info: ./figures/cm_h32_w32_r_none_e0.png  used on input line
+ 108.
+(pdftex.def)             Requested size: 150.32504pt x 112.74515pt.
+<./figures/cm_h32_w32_r_none_e20.png, id=25, 462.528pt x 346.896pt>
+File: ./figures/cm_h32_w32_r_none_e20.png Graphic file (type png)
+<use ./figures/cm_h32_w32_r_none_e20.png>
+Package pdftex.def Info: ./figures/cm_h32_w32_r_none_e20.png  used on input lin
+e 109.
+(pdftex.def)             Requested size: 150.32504pt x 112.74515pt.
+<./figures/cm_h32_w32_r_none_e49.png, id=26, 462.528pt x 346.896pt>
+File: ./figures/cm_h32_w32_r_none_e49.png Graphic file (type png)
+<use ./figures/cm_h32_w32_r_none_e49.png>
+Package pdftex.def Info: ./figures/cm_h32_w32_r_none_e49.png  used on input lin
+e 110.
+(pdftex.def)             Requested size: 150.32504pt x 112.74515pt.
+<./figures/pca_h64_w64_r_none.png, id=27, 361.35pt x 361.35pt>
+File: ./figures/pca_h64_w64_r_none.png Graphic file (type png)
+<use ./figures/pca_h64_w64_r_none.png>
+Package pdftex.def Info: ./figures/pca_h64_w64_r_none.png  used on input line 1
+17.
+(pdftex.def)             Requested size: 150.32504pt x 150.32687pt.
+<./figures/pca_tsne_h64_w64_r_none.png, id=28, 361.35pt x 361.35pt>
+File: ./figures/pca_tsne_h64_w64_r_none.png Graphic file (type png)
+<use ./figures/pca_tsne_h64_w64_r_none.png>
+Package pdftex.def Info: ./figures/pca_tsne_h64_w64_r_none.png  used on input l
+ine 118.
+(pdftex.def)             Requested size: 150.32504pt x 150.32687pt.
+<./figures/tsne_h64_w64_r_none.png, id=29, 722.7pt x 722.7pt>
+File: ./figures/tsne_h64_w64_r_none.png Graphic file (type png)
+<use ./figures/tsne_h64_w64_r_none.png>
+Package pdftex.def Info: ./figures/tsne_h64_w64_r_none.png  used on input line 
+119.
+(pdftex.def)             Requested size: 150.32504pt x 150.32687pt.
+<./figures/cm_h64_w64_r_none_e0.png, id=30, 462.528pt x 346.896pt>
+File: ./figures/cm_h64_w64_r_none_e0.png Graphic file (type png)
+<use ./figures/cm_h64_w64_r_none_e0.png>
+Package pdftex.def Info: ./figures/cm_h64_w64_r_none_e0.png  used on input line
+ 126.
+(pdftex.def)             Requested size: 150.32504pt x 112.74515pt.
+<./figures/cm_h64_w64_r_none_e20.png, id=31, 462.528pt x 346.896pt>
+File: ./figures/cm_h64_w64_r_none_e20.png Graphic file (type png)
+<use ./figures/cm_h64_w64_r_none_e20.png>
+Package pdftex.def Info: ./figures/cm_h64_w64_r_none_e20.png  used on input lin
+e 127.
+(pdftex.def)             Requested size: 150.32504pt x 112.74515pt.
+<./figures/cm_h64_w64_r_none_e49.png, id=32, 462.528pt x 346.896pt>
+File: ./figures/cm_h64_w64_r_none_e49.png Graphic file (type png)
+<use ./figures/cm_h64_w64_r_none_e49.png>
+Package pdftex.def Info: ./figures/cm_h64_w64_r_none_e49.png  used on input lin
+e 128.
+(pdftex.def)             Requested size: 150.32504pt x 112.74515pt.
+<./figures/acc_h64_w64_r_none.png, id=33, 875.6715pt x 406.51875pt>
+File: ./figures/acc_h64_w64_r_none.png Graphic file (type png)
+<use ./figures/acc_h64_w64_r_none.png>
+Package pdftex.def Info: ./figures/acc_h64_w64_r_none.png  used on input line 1
+37.
+(pdftex.def)             Requested size: 300.64291pt x 139.56679pt.
+ [4 <./figures/pca_h32_w32_r_none.png> <./figures/pca_tsne_h32_w32_r_none.png> 
+<./figures/tsne_h32_w32_r_none.png> <./figures/cm_h32_w32_r_none_e0.png> <./fig
+ures/cm_h32_w32_r_none_e20.png> <./figures/cm_h32_w32_r_none_e49.png>] [5 <./fi
+gures/pca_h64_w64_r_none.png> <./figures/pca_tsne_h64_w64_r_none.png> <./figure
+s/tsne_h64_w64_r_none.png> <./figures/cm_h64_w64_r_none_e0.png> <./figures/cm_h
+64_w64_r_none_e20.png> <./figures/cm_h64_w64_r_none_e49.png> <./figures/acc_h64
+_w64_r_none.png>] (report.aux) ) 
 Here is how much of TeX's memory you used:
- 2655 strings out of 492970
- 36969 string characters out of 3126149
- 105318 words of memory out of 3000000
- 6479 multiletter control sequences out of 15000+200000
+ 3226 strings out of 492970
+ 47160 string characters out of 3126149
+ 120236 words of memory out of 3000000
+ 7019 multiletter control sequences out of 15000+200000
  10150 words of font info for 38 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,6n,27p,783b,219s stack positions out of 5000i,500n,10000p,200000b,50000s
-<C:/Users/mkuang/AppData/Local/Programs/MiKT
-eX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/mkuang/AppData/Local
-/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/mkuang
-/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:
-/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/
-cmr12.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public
-/amsfonts/cm/cmr17.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts
-/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/mkuang/AppData/Local/Programs/Mi
-KTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on report.pdf (5 pages, 131783 bytes).
+ 41i,6n,32p,783b,269s stack positions out of 5000i,500n,10000p,200000b,50000s
+<C:/Users/mkuang/AppData/Local/Programs/MiKTeX 
+2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/mkuang/AppData/Local/Pr
+ograms/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/mkuang/Ap
+pData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Us
+ers/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr
+12.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/am
+sfonts/cm/cmr17.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTeX 2.9/fonts/ty
+pe1/public/amsfonts/cm/cmsy10.pfb><C:/Users/mkuang/AppData/Local/Programs/MiKTe
+X 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
+Output written on report.pdf (5 pages, 1322043 bytes).
 PDF statistics:
- 49 PDF objects out of 1000 (max. 8388607)
+ 75 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 71 words of extra memory for PDF output out of 10000 (max. 10000000)
 
