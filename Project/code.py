@@ -233,7 +233,7 @@ for name, model in list(
 
         result_dir = './logs/attempt_{}/h{}w{}_{}_{}'.format(attempt, FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
         train_dir = './logs/attempt_{}/train'.format(attempt)
-        
+
         summary_writer = tf.summary.FileWriter(result_dir, graph=sess.graph)
         # you need to initialize all variables
         tf.global_variables_initializer().run()
@@ -247,12 +247,12 @@ for name, model in list(
                 try:
                     images, labels = sess.run(next_train_batch)
                     # print(images)
-                    train_summary, _  = sess.run([merged, train_op], feed_dict={X: images,
+                    train_summary, _ = sess.run([merged, train_op], feed_dict={X: images,
                                                                                Y: labels,
                                                                                p_keep_conv: 0.8, p_keep_hidden: 0.5})
 
                 except tf.errors.OutOfRangeError:
-                
+
                     # end of training epoch
                     summary_writer.add_summary(train_summary, epoch)
                     # train_sw.add_summary(train_accuracy_summary, epoch)
@@ -298,21 +298,20 @@ for name, model in list(
                     plt.figure()
 
                     cnf_matrix = confusion_matrix(y_tests, y_preds)
-                    
-                    
+                    print("confusion matrix", "\n", cnf_matrix)
+
                     plot_confusion_matrix(cnf_matrix, classes=["airplane",
-                                        "car",
-                                        "cat",
-                                        "dog",
-                                        "flower",
-                                        "fruit",
-                                        "motorbike",
-                                        "person"],
-                    title='Confusion matrix epoch {}'.format(epoch))
+                                                               "car",
+                                                               "cat",
+                                                               "dog",
+                                                               "flower",
+                                                               "fruit",
+                                                               "motorbike",
+                                                               "person"],
+                                          title='Confusion matrix epoch {}'.format(epoch))
                     fn = './figures/cm_h{}_w{}_{}_{}_e{}'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling, epoch)
                     plt.savefig(fn)
 
-                    print("confusion matrix", cnf_matrix)
                     if FLAGS.verbose:
                         plt.show()
                     break

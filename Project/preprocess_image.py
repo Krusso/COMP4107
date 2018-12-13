@@ -201,7 +201,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
 
     print("Using:", FLAGS.sampling)
     if FLAGS.sampling == 'smote':
-        dataset, labels = imb.SMOTE(n_jobs=2).fit_sample(dataset, unhotlabels)
+        dataset, labels = imb.SMOTE(n_jobs=8).fit_sample(dataset, unhotlabels)
     elif FLAGS.sampling == 'adasyn':
         dataset, labels = imb.ADASYN(sampling_strategy={
             0: 1400,
@@ -212,7 +212,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
             5: 1400,
             6: 1400,
             7: 1400,
-        }, n_jobs=4).fit_sample(dataset, unhotlabels)
+        }, n_jobs=8).fit_sample(dataset, unhotlabels)
     elif FLAGS.sampling == 'none':
         dataset, labels = dataset, unhotlabels
 
