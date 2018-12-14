@@ -26,7 +26,7 @@ def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
     tf.summary.histogram("weights of third convolution layer 3x3x32x32 model", w_3)
 
     if spatial:
-        w_fc = init_weights([1600, 625])  # FC 3^2 + 4^2 + 5^2 + 6^2 inputs, 625 outputs
+        w_fc = init_weights([3712, 625])  # FC (4^2 + 6^2 + 8^2 + 6^2) * 32 inputs, 625 outputs
     else:
         w_fc = init_weights([int(32 * (height / 8) * (width / 8)), 625])  # FC 32 * 8 * 8 inputs, 625 outputs
 
@@ -52,7 +52,7 @@ def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
     # either do spatial pooling or regular max pooling
     if spatial:
         # spatial pooling
-        layer = spp(dimensions=[3, 4, 5])  # results in (3^2 + 4^2 + 5^2) * feature outputs
+        layer = spp(dimensions=[4, 6, 8])  # results in (4^2 + 6^2 + 8^2) * feature outputs
         l3 = layer.apply(l3a)
     else:
         l3 = tf.nn.max_pool(l3a, ksize=[1, 2, 2, 1],  # l2a shape=(?, height/8, width/8, 32)
@@ -71,11 +71,19 @@ def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
 
 def parse_example(example, height, width):
     features = {'image_raw': tf.FixedLenFeature((), tf.string, default_value=""),
-                'label': tf.FixedLenFeature((), tf.int64, default_value=0)}
+                'label': tf.FixedLenFeature((), tf.int64, default_value=0),
+                'width': tf.FixedLenFeature((), tf.int64, default_value=0),
+                'height': tf.FixedLenFeature((), tf.int64, default_value=0)}
     parsed_features = tf.parse_single_example(example, features)
 
     image = tf.decode_raw(parsed_features['image_raw'], tf.float32)
-    image = tf.reshape(image, [height, width, 3])
+    if not parsed_features['width'] == 0:
+        #print(tf.decode_raw(parsed_features['height'], int))
+        image = tf.reshape(image,
+                           [tf.cast(parsed_features['height'], tf.int32), tf.cast(parsed_features['width'], tf.int32),
+                            3])
+    else:
+        image = tf.reshape(image, [height, width, 3])
 
     label = tf.cast(parsed_features['label'], tf.int64)
     return image, tf.one_hot(label, 8)
@@ -143,7 +151,7 @@ parser.add_argument(
     '--method',
     type=str,
     default='r',
-    help='choose either r or cp where. r means resize to hxw size or cp means crop and pad to hxw'
+    help='choose either r or cp or spatial where. r means resize to hxw size or cp means crop and pad to hxw'
 )
 
 parser.add_argument(
@@ -169,7 +177,7 @@ parser.add_argument(
 
 FLAGS, unparsed = parser.parse_known_args()
 
-batch_size = 32
+batch_size = 1
 
 train_set = input_fn(
     height=FLAGS.h,
@@ -183,7 +191,7 @@ test_set = input_fn(
     width=FLAGS.w,
     filenames=[
         'distorted_images/test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
-    batch_size=32)
+    batch_size=1)
 
 # Training iterators
 train_iterator = train_set.make_initializable_iterator()
@@ -197,7 +205,11 @@ next_test_batch = test_iterator.get_next()
 train_init_op = train_iterator.initializer
 test_init_op = test_iterator.initializer
 
-X = tf.placeholder("float", [None, FLAGS.h, FLAGS.w, 3], name='image')
+if FLAGS.spatial:
+    X = tf.placeholder("float", [None, None, None, 3], name='image')
+else:
+    X = tf.placeholder("float", [None, FLAGS.h, FLAGS.w, 3], name='image')
+
 Y = tf.placeholder("float", [None, 8], name='label')
 batch_accuracies = tf.placeholder("float", [None])
 
@@ -242,11 +254,11 @@ for name, model in list(
             # Initialize the training iterator to consume training data
             sess.run(train_init_op)
             train_accuracy = []
+            i = 0
             while True:
                 # as long as the iterator has not hit the end, continue to consume training data
                 try:
                     images, labels = sess.run(next_train_batch)
-                    # print(images)
                     train_summary, _ = sess.run([merged, train_op], feed_dict={X: images,
                                                                                Y: labels,
                                                                                p_keep_conv: 0.8, p_keep_hidden: 0.5})

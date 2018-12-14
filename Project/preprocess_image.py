@@ -34,13 +34,12 @@ def visualize_scatter(filename, figure_name, data_2d, label_ids, id_to_label_dic
                     linewidth='1',
                     alpha=0.8,
                     label=id_to_label_dict[label_id])
-        
+
     plt.title(figure_name)
     plt.legend(loc='best')
 
     plt.savefig(filename)
     plt.show()
-    
 
 
 def show_tnse(data, labels, height, width):
@@ -54,10 +53,10 @@ def show_tnse(data, labels, height, width):
         6: 'motorbike',
         7: 'person'
     }
-    
-    if FLAGS.method =='r':
+
+    if FLAGS.method == 'r':
         meth = 'nearest interpolation'
-    elif FLAGS.method =='cp':
+    elif FLAGS.method == 'cp':
         meth = 'crop and pad'
     else:
         meth = 'none'
@@ -66,8 +65,9 @@ def show_tnse(data, labels, height, width):
     pca = PCA(n_components=50)
     pca_result = pca.fit_transform(data)
     pca_result_scaled = StandardScaler().fit_transform(pca_result)
-    fn = "{}/pca_h{}_w{}_{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
-    visualize_scatter(fn, "PCA of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth),pca_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
+    fn = "{}/pca_h{}_w{}_{}_{}".format(FIGURE_DIR, FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    visualize_scatter(fn, "PCA of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth), pca_result_scaled,
+                      np.argmax(labels, axis=1), id_to_label_dict)
 
     pca = PCA(n_components=50)
     pca_result = pca.fit_transform(data)
@@ -79,9 +79,9 @@ def show_tnse(data, labels, height, width):
     tsne_result = tsne.fit_transform(pca_result)
     tsne_result_scaled = StandardScaler().fit_transform(tsne_result)
 
-    fn = "{}/pca_tsne_h{}_w{}_{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
-    visualize_scatter(fn, "PCA and t-SNE of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth), tsne_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
-
+    fn = "{}/pca_tsne_h{}_w{}_{}_{}".format(FIGURE_DIR, FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    visualize_scatter(fn, "PCA and t-SNE of dataset resized to {}x{} by {}".format(FLAGS.h, FLAGS.w, meth),
+                      tsne_result_scaled, np.argmax(labels, axis=1), id_to_label_dict)
 
     tsne = TSNE(n_components=3, perplexity=40.0)
     tsne_result = tsne.fit_transform(pca_result)
@@ -109,14 +109,15 @@ def show_tnse(data, labels, height, width):
     ax.set_ylim(-2.5, 2.5)
     ax.set_zlim(-2.5, 2.5)
     plt.title('t-SNE of dataset resized to {}x{} by {}'.format(FLAGS.h, FLAGS.w, meth))
-    fn = "{}/tsne_h{}_w{}_{}_{}".format(FIGURE_DIR,FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
+    fn = "{}/tsne_h{}_w{}_{}_{}".format(FIGURE_DIR, FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)
     plt.savefig(fn)
     plt.show()
 
 
 # short for quick testing, will only deal with several hundred images not the entire dataset
 # cropAndPad if false use tf.image.resize_images if true then use tf.image_image_with_crop_or_pad
-def natural_images(path='./natural_images', width=64, height=64, cropAndPad=False, short=False):
+def natural_images(path='./natural_images', width=64, height=64, cropAndPad=False, short=False, spatial=False):
+    print("Spatial", spatial)
     files = [('airplane', [1, 0, 0, 0, 0, 0, 0, 0]),
              ('car', [0, 1, 0, 0, 0, 0, 0, 0]),
              ('cat', [0, 0, 1, 0, 0, 0, 0, 0]),
@@ -127,11 +128,16 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
              ('person', [0, 0, 0, 0, 0, 0, 0, 1])]
 
     # dataset contains 6899 images
-    dataset = np.ndarray(shape=(6899, height, width, 3),
-                         dtype=np.float32)
+    if spatial:
+        dataset = []
 
-    labels = np.ndarray(shape=(6899, 8),
-                        dtype=np.float32)
+        labels = []
+    else:
+        dataset = np.ndarray(shape=(6899, height, width, 3),
+                             dtype=np.float32)
+
+        labels = np.ndarray(shape=(6899, 8),
+                            dtype=np.float32)
 
     # with tf.Session() as sess:
     i = 0
@@ -149,7 +155,18 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
             # cv2.imshow('original',im)
             # print(im.shape)
             # print(height, width)
-            if FLAGS.method == 'cp':
+            if spatial:
+                dataset.append(im)
+                labels.append(label)
+                i += 1
+
+                if i % 100 == 0 and i > 0:
+                    print(i, "read")
+                    if short:
+                        break
+
+                continue
+            elif FLAGS.method == 'cp':
                 # im = tf.image.resize_image_with_crop_or_pad(im, [height, width])
                 # im = cv2.resize(im, [height, width], interpolation=cv2.INTER_AREA)
                 if w > width:  # if w is greater than resize width, crop it about the center.
@@ -171,7 +188,7 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
                 # print(im.shape)
             elif FLAGS.method == 'r':
                 im = cv2.resize(im, (height, width), interpolation=cv2.INTER_NEAREST)
-                
+
                 # im = tf.image.resize_images(im, [height, width], align_corners=True)
             # cv2.imshow('image',im)
             # cv2.waitKey(0) 
@@ -186,62 +203,64 @@ def natural_images(path='./natural_images', width=64, height=64, cropAndPad=Fals
 
     print("Done reading images")
 
-    print("Starting to generate synthetic data")
+    if not spatial:
+        print("Starting to generate synthetic data")
 
-    # Smote Upsampling and downsampling
+        # Smote Upsampling and downsampling
+        print('Flattening image dataset to sample')
+        dataset = dataset.flatten().reshape(6899, height * width * 3)
+        print('Fitting samples...')
 
-    print('Flattening image dataset to sample')
-    dataset = dataset.flatten().reshape(6899, height * width * 3)
-    print('Fitting samples...')
+        unhotlabels = np.argmax(labels, axis=1)
 
-    unhotlabels = np.argmax(labels, axis=1)
+        unique, counts = np.unique(unhotlabels, return_counts=True)
+        print("count before", dict(zip(unique, counts)))
 
-    unique, counts = np.unique(unhotlabels, return_counts=True)
-    print("count before", dict(zip(unique, counts)))
+        print("Using:", FLAGS.sampling)
+        if FLAGS.sampling == 'smote':
+            dataset, labels = imb.SMOTE(n_jobs=8).fit_sample(dataset, unhotlabels)
+        elif FLAGS.sampling == 'adasyn':
+            dataset, labels = imb.ADASYN(sampling_strategy={
+                0: 1400,
+                1: 1400,
+                2: 1400,
+                3: 1400,
+                4: 1400,
+                5: 1400,
+                6: 1400,
+                7: 1400,
+            }, n_jobs=8).fit_sample(dataset, unhotlabels)
+        elif FLAGS.sampling == 'none':
+            dataset, labels = dataset, unhotlabels
 
-    print("Using:", FLAGS.sampling)
-    if FLAGS.sampling == 'smote':
-        dataset, labels = imb.SMOTE(n_jobs=8).fit_sample(dataset, unhotlabels)
-    elif FLAGS.sampling == 'adasyn':
-        dataset, labels = imb.ADASYN(sampling_strategy={
-            0: 1400,
-            1: 1400,
-            2: 1400,
-            3: 1400,
-            4: 1400,
-            5: 1400,
-            6: 1400,
-            7: 1400,
-        }, n_jobs=8).fit_sample(dataset, unhotlabels)
-    elif FLAGS.sampling == 'none':
-        dataset, labels = dataset, unhotlabels
+        unique, counts = np.unique(labels, return_counts=True)
+        print("count after", dict(zip(unique, counts)))
 
-    unique, counts = np.unique(labels, return_counts=True)
-    print("count after", dict(zip(unique, counts)))
+        # hot encoding
+        n_values = np.max(labels) + 1
+        labels = np.eye(n_values)[labels]
 
-    # hot encoding
-    n_values = np.max(labels) + 1
-    labels = np.eye(n_values)[labels]
+        dataset = dataset.reshape(dataset.shape[0], height, width, 3)
 
-    dataset = dataset.reshape(dataset.shape[0], height, width, 3)
-
-    print("Finished generating new data")
-
-    # trainData, trainLabel, testData, testLabel
-    # TODO: @Michael/@Krystian shuffle the data before returning it and set the bounds for training/testing correctly
+        print("Finished generating new data")
 
     # num examples
-    num_examples = dataset.shape[0]
+    if spatial:
+        num_examples = len(dataset)
+    else:
+        num_examples = dataset.shape[0]
+
     kfold = 10
-    split_index = num_examples//kfold
+    split_index = num_examples // kfold
     if short:
         return dataset[0:400], labels[0:400], \
-        dataset[400:600], labels[400:600]
+               dataset[400:600], labels[400:600]
 
     dataset, labels = shuffle(dataset, labels)
-    show_tnse(dataset[:2000], labels[:2000], height, width)
+    if not spatial:
+        show_tnse(dataset[:2000], labels[:2000], height, width)
     return dataset[split_index:], labels[split_index:], \
-        dataset[:split_index], labels[:split_index]
+           dataset[:split_index], labels[:split_index]
 
 
 def _int64_feature(value):
@@ -262,7 +281,9 @@ def _write_example(image, label):
         features=tf.train.Features(
             feature={
                 'image_raw': _bytes_feature(image.tostring()),
-                'label': _int64_feature(label)
+                'label': _int64_feature(label),
+                'width': _int64_feature(len(image[0])),
+                'height': _int64_feature(len(image))
             }))
     return example
 
@@ -283,6 +304,7 @@ def salt_pepper(image):
         out[i][j] = 0
     return out
 
+
 def random_hsv(image):
     """
         input: cv2 image type of BGR
@@ -290,22 +312,23 @@ def random_hsv(image):
     """
 
     d_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV, )
-    random_adjustment = float(np.random.random_integers(20,160))
-    d_img[:,:,0] += random_adjustment
+    random_adjustment = float(np.random.random_integers(20, 160))
+    d_img[:, :, 0] += random_adjustment
     # print("HUE BEFORE",d_img[:,:,0])
-    d_img[:,:,0] %= 180
+    d_img[:, :, 0] %= 180
     # print("HUE AFTER", d_img[:,:,0])
-    random_adjustment = float(np.random.random_integers(20,225))
+    random_adjustment = float(np.random.random_integers(20, 225))
     # print("b d_img 1", d_img[:,:,1])
-    d_img[:,:,1] *=  255
-    d_img[:,:,1] += random_adjustment
+    d_img[:, :, 1] *= 255
+    d_img[:, :, 1] += random_adjustment
     # print("m d_img 1", d_img[:,:,1])
-    d_img[:,:,1] %= 255
-    d_img[:,:,1] /= 255.0
+    d_img[:, :, 1] %= 255
+    d_img[:, :, 1] /= 255.0
     # print("a d_img 1", d_img[:,:,1])
-    d_img[:,:,2] +=  float(np.random.random_integers(-15,15)/100)
+    d_img[:, :, 2] += float(np.random.random_integers(-15, 15) / 100)
     d_img = cv2.cvtColor(d_img, cv2.COLOR_HSV2BGR)
     return d_img
+
 
 def modify_image(trX, trY):
     """
@@ -317,8 +340,7 @@ def modify_image(trX, trY):
     labels = []
     for i in range(len(trX)):
         # cv2.imshow('original', trX[i])
-        for j in range(1,4):
-            
+        for j in range(1, 4):
             d_img = random_hsv(trX[i])
             d_img = salt_pepper(np.rot90(d_img, j))
             distorted.append(d_img)
@@ -343,20 +365,15 @@ def main(unused_argv):
         cropAndPad = False
 
     print("Read natural images dataset")
-    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad, short=False)
-    # Different sizes we can try for the height/width of the modified images
-    # trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=32, cropAndPad=True)
-    # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=False)
-    # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=64, cropAndPad=True)
-    # trX, trY, teX, teY = cifar10(path='./natural_images', height=64, width=128, cropAndPad=False)
-    # trX, trY, teX, teY = cifar10(path='./natural_images', height=32, width=128, cropAndPad=True)
+    trX, trY, teX, teY = natural_images(path='./natural_images', height=FLAGS.h, width=FLAGS.w, cropAndPad=cropAndPad,
+                                        short=False, spatial=(FLAGS.method == 'spatial'))
 
     train_file = os.path.join(DISTORTED_IMAGE_DIR,
                               'train_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling))
     test_file = os.path.join(DISTORTED_IMAGE_DIR,
                              'test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling))
 
-    # TODO: @Michael get the data augmentation call back into the pipeline
+
     trX, trY = modify_image(trX, trY)
     print("Completed Modification of Images")
 
@@ -368,14 +385,14 @@ def main(unused_argv):
     print("Length training Y", len(trY))
     for i in range(n):
         # convert to tf examples, labels one-hot encoding converted to integer (later parsing will need to convert back)
-        example = _write_example(trX[i], np.where(trY[i] == 1)[0][0])
+        example = _write_example(trX[i], np.where(np.array(trY[i]) == 1)[0][0])
         train_set.append(example)
 
     print("Converting testing dataset to tf Examples...")
     print("Length testing X", len(teX))
     print("Length testing Y", len(teY))
     for i in range(len(teX)):
-        example = _write_example(teX[i], np.where(teY[i] == 1)[0][0])
+        example = _write_example(teX[i], np.where(np.array(teY[i]) == 1)[0][0])
         test_set.append(example)
 
     print("Writing modified Examples into TFRecord file")
@@ -399,7 +416,8 @@ if __name__ == '__main__':
         '--method',
         type=str,
         default='r',
-        help='choose either r or cp where. r means resize to hxw size or cp means crop and pad to hxw'
+        help='choose either r or cp or spatial where. r means resize to hxw size or cp means crop and pad to hxw '
+             'and spatial means keep as is'
     )
     parser.add_argument(
         '--h',
@@ -423,7 +441,7 @@ if __name__ == '__main__':
     FLAGS, unparsed = parser.parse_known_args()
 
     print(FLAGS)
-    if (FLAGS.method == 'cp' or FLAGS.method == 'r') and \
+    if (FLAGS.method == 'cp' or FLAGS.method == 'r' or FLAGS.method == 'spatial') and \
             (FLAGS.sampling == 'smote' or FLAGS.sampling == 'adasyn' or FLAGS.sampling == 'none'):
         tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
     else:
