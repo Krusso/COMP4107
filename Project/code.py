@@ -69,7 +69,7 @@ def create_model(X, p_keep_conv, p_keep_hidden, height, width, spatial=False):
     return pyx
 
 
-def parse_example(example, height, width):
+def parse_example(example, height, width, spatial):
     features = {'image_raw': tf.FixedLenFeature((), tf.string, default_value=""),
                 'label': tf.FixedLenFeature((), tf.int64, default_value=0),
                 'width': tf.FixedLenFeature((), tf.int64, default_value=0),
@@ -77,8 +77,8 @@ def parse_example(example, height, width):
     parsed_features = tf.parse_single_example(example, features)
 
     image = tf.decode_raw(parsed_features['image_raw'], tf.float32)
-    if not parsed_features['width'] == 0:
-        #print(tf.decode_raw(parsed_features['height'], int))
+
+    if spatial:
         image = tf.reshape(image,
                            [tf.cast(parsed_features['height'], tf.int32), tf.cast(parsed_features['width'], tf.int32),
                             3])
@@ -89,10 +89,10 @@ def parse_example(example, height, width):
     return image, tf.one_hot(label, 8)
 
 
-def input_fn(filenames, height, width, shuffle_buff=100, batch_size=128):
+def input_fn(filenames, height, width, spatial=False, shuffle_buff=100, batch_size=128):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.shuffle(shuffle_buff)
-    dataset = dataset.map(lambda example: parse_example(example, height, width))
+    dataset = dataset.map(lambda example: parse_example(example, height, width, spatial))
     dataset = dataset.batch(batch_size)
     return dataset
 
@@ -184,6 +184,7 @@ if FLAGS.spatial:
 train_set = input_fn(
     height=FLAGS.h,
     width=FLAGS.w,
+    spatial=FLAGS.spatial,
     filenames=[
         'distorted_images/train_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
     batch_size=batch_size)
@@ -191,6 +192,7 @@ train_set = input_fn(
 test_set = input_fn(
     height=FLAGS.h,
     width=FLAGS.w,
+    spatial=FLAGS.spatial,
     filenames=[
         'distorted_images/test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
     batch_size=batch_size)
