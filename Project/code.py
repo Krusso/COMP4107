@@ -193,7 +193,7 @@ test_set = input_fn(
     width=FLAGS.w,
     filenames=[
         'distorted_images/test_set_h{}w{}_{}_{}.tfrecords'.format(FLAGS.h, FLAGS.w, FLAGS.method, FLAGS.sampling)],
-    batch_size=1)
+    batch_size=batch_size)
 
 # Training iterators
 train_iterator = train_set.make_initializable_iterator()

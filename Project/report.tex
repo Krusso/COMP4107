@@ -22,7 +22,7 @@
 \newcommand{\figureWidth}{0.25}
 \section{Introduction}
 \paragraph{}
-{\em Natural Images} is a dataset currently featured on {\em kaggle.com}. The set is comprised of 6899 images from 8 distinct classes of airplane, car, cat, dog, flower, fruit, motorbike and person. Each class has a varying number of examples. We examined different techniques in pre-processing images and implemented them to analyze their effects on performance in a convolution neural network. 
+{\em Natural Images} is a dataset currently featured on {\em kaggle.com}[1]. The set is comprised of 6899 images from 8 distinct classes of airplane, car, cat, dog, flower, fruit, motorbike and person. Each class has a varying number of examples. We examined different techniques in pre-processing images and implemented them to analyze their effects on performance in a convolution neural network. 
 
 \section{Problem Statement}
 \paragraph{}
@@ -72,15 +72,15 @@ To crop images, we simply used Python's built in array slicing on numpy arrays. 
 
 \subsubsection{Spatial Pyramid Pooling}
 \paragraph{}
-CNNs require a fixed input image size such as 32x32, 64x64 or 128x128 as experimented with in this report. This requirement is human made and artificial while also potentially decreasing recognition accuracy due to loss of content while padding or distortion while resizing. The need to fixed size inputs is due to the fully-connected layer portion of a CNN, the convolution layers use a sliding window and operate correctly on any size input. However the fully-connected portion requires a fixed-size input. To get around this Kaiming et al [2015] introduced spatial pyyramid pooling (SPP), this pooling layer is added on top of the final convolution layer and generates fixed-length outputs regardless of the size of the feature maps given to it.  \\
+CNNs require a fixed input image size such as 32x32, 64x64 or 128x128 as experimented with in this report. This requirement is human made and artificial while also potentially decreasing recognition accuracy due to loss of content while padding or distortion while resizing. The need for fixed size inputs is due to the fully-connected layer portion of a CNN, the convolution layers use a sliding window and operate correctly on any size input. However the fully-connected portion requires a fixed-size input. To get around this Kaiming et al [2] introduced spatial pyramid pooling (SPP) into CNNs, this pooling layer is added on top of the final convolution layer and generates fixed-length outputs regardless of the size of the feature maps given to it.  \\
 
 SPP builds on and improves the concept of Bag-of-Words (BoW), it does so but maintaining spatial information by pooling in local spatial bins. These spatial bins have sizes that are proportional to the image size meaning that the number of bins is fixed regardless of the image size.
 
 \begin{center}
 	\includegraphics{spp}
+	\captionof{figure}{An example of a network structure using an SPP from Kaiming et al [2] where 256 is the number of input feature maps and the SPP consists of 3 different bin sizes: a global bin, a bin with 2 buckets and a bin with 4 buckets}
 \end{center}
 
-For training and testing a model with an SPP layer several approaches can be taken. We chose to investigate a multi-size training approach, here we create two fixed-size networks that share parameters. Then for training we alternated by providing the network 32x32 images for one epoch and then 64x64 epochs for the next epoch. 
 
 \subsubsection{Over-sampling vs Under-sampling}
 \paragraph{}
@@ -95,9 +95,18 @@ To over-sample our dataset, we used the following methods from the imbalance-lea
 	
 \end{itemize}
 
-The SMOTE algorithm applies KNN approach where it selects K nearest neighbors, joins them and creates the synthetic samples in the space. The algorithm takes the feature vectors and its nearest neighbors, computes the distance between these vectors, and multiplies it by a random number between (0, 1) and it is added back to feature. 
-The ADASYN algorithm is based on the idea of adaptively generating minority data samples according to their distributions using K nearest neighbor. The algorithm adaptively updates the distribution and there are no assumptions made for the underlying distribution of the data.  The algorithm uses Euclidean distance for KNN Algorithm. 
+The SMOTE algorithm applies KNN approach where it selects K nearest neighbors, joins them and creates the synthetic samples in the space[3]. The algorithm takes the feature vectors and its nearest neighbors, computes the distance between these vectors, and multiplies it by a random number between (0, 1) and it is added back to feature. 
+The ADASYN algorithm is based on the idea of adaptively generating minority data samples according to their distributions using K nearest neighbor[3]. The algorithm adaptively updates the distribution and there are no assumptions made for the underlying distribution of the data.  The algorithm uses Euclidean distance for KNN Algorithm. 
 The key difference between SMOTE and ADASYN is that the former generates the same number of synthetic samples for each of the minority classes while the latter uses a density distribution, as a criterion to automatically decide the number of synthetic samples that must be generated for each minority sample by adaptively changing the weights of the different minority samples to compensate for the skewed distributions.
+
+\subsubsection{Neural Network Model}
+\paragraph{}
+The model chosen to experiment with was quite simple with 3 convolution layers, each with a kernel of 3x3 using a stride of 1x1 and padding of SAME outputting 32 feature maps. Max pooling was done after each convolution layer using the SAME padding with a stride of 2x2.  These 3 layers connected to a fully connected feed forward network of 625 neurons. When using an SPP layer 3 bins were used of size 4, 6, 8.
+
+\subsubsection{t-SNE}
+t-SNE is another technique for dimensionality reduction and as described in the original paper[4], t-Distributed stochastic neighbor (t-SNE) minimizes the divergence between two distributions: one distribution which measures the similarities between inputs and the other distribution that measures the difference between the reduced data according to a t-distribution. The main drawback of this algorithm is that it scales quadratically so using more than a few thousand data point is unfeasible. 
+
+\paragraph{}
 
 \section{Results}
 
@@ -108,18 +117,7 @@ The key difference between SMOTE and ADASYN is that the former generates the sam
 
 \subsubsection{Resizing unbalanced dataset by scaling using nearest interpolation}
 
-	\centering
-%32x32
-	\includegraphics[width= \figureWidth\textwidth]{./figures/pca_h32_w32_r_none.png}
-	\includegraphics[width= \figureWidth\textwidth]{./figures/pca_tsne_h32_w32_r_none.png}
-	\includegraphics[width= \figureWidth\textwidth]{./figures/tsne_h32_w32_r_none.png}
-	\captionof{figure}{Visualization of 2000 randomly picked data points for 32x32 rescaled images}
-	
-	\includegraphics[width= \figureWidth\textwidth]{./figures/cm_h32_w32_r_none_e0.png}
-	\includegraphics[width= \figureWidth\textwidth]{./figures/cm_h32_w32_r_none_e20.png}
-	\includegraphics[width= \figureWidth\textwidth]{./figures/cm_h32_w32_r_none_e49.png}
-	\captionof{figure}{Visualization of 2000 randomly picked data points for 32x32 rescaled images}
-	%64x64
+
 
 \end{minipage}
 
@@ -224,6 +222,9 @@ The key difference between SMOTE and ADASYN is that the former generates the sam
 
 \section{Analysis and Discussion}
 \paragraph{}
+From the figures above we can see the data is highly intertwined and any clustering technique would have difficultly achieving a high accuracy. Using t-SNE on top of PCA was able to separate the data better than PCA on its own, again however it was not able to separate enough for any clustering technique to work.
+
+
 We compared results between resizing by scaling and crop and pad. Each experiment ran for 50 epochs and the resulting accuracies were tabulated as shown below:
 
 \begin{table}[ht]
@@ -247,7 +248,7 @@ We compared results between resizing by scaling and crop and pad. Each experimen
 	\label{table:scale_cp} % is used to refer this table in the text
 \end{table}
 In general, the training seems to have converged at approximately 20 epochs before over fitting as we can see that at 50 epochs the accuracy is worse than at 20 epochs. 
-The results from the different resizing techniques show that in general, resizing by scaling the image is significantly better than cropping and padding, as can be seen from Figure 6 and Figure 13 and Table 1. We note that each size increment for cropping and padding an image results in a significant accuracy increase and this is reasonable because of the nature of how crop and pad processes an image. When an image is resized by crop and pad, we either directly crop out the extra rows and columns of pixels if it is too large, or pad them with black pixels. The idea is to retain the image resolution and not skew it. However, if the original image is much larger than the resulting size, we directly remove a large amount of data which will cause poor performance. For example, if we resize a cat image of 64x64 to a 32x32 image by cropping it, the resulting image will only hold the center chest area of the cat, thus losing the "arm", "leg" and "head" features of a cat. Conversely, resizing an image by scaling it with nearest interpolation is a much better approach at reducing noise because each image still holds the full picture. This also explains why the images scaled to 32x32 does just as well as an image that is cropped and padded to 128x128. However, we have not tried a large enough size in which cropping was unnecessary and the images would only be padded with black pixels. It may be interesting to observe the performance for images that are only padded because then no information is lost. Then, we would be comparing the performance for adding black pixel as noise versus stretching an image to a specified size. 
+The results from the different resizing techniques show that in general, resizing by scaling the image is significantly better than cropping and padding, as can be seen from Figure 8 and Figure 14 and Table 1. We note that each size increment for cropping and padding an image results in a significant accuracy increase and this is reasonable because of the nature of how crop and pad processes an image. When an image is resized by crop and pad, we either directly crop out the extra rows and columns of pixels if it is too large, or pad them with black pixels. The idea is to retain the image resolution and not skew it. However, if the original image is much larger than the resulting size, we directly remove a large amount of data which will cause poor performance. For example, if we resize a cat image of 64x64 to a 32x32 image by cropping it, the resulting image will only hold the center chest area of the cat, thus losing the "arm", "leg" and "head" features of a cat. Conversely, resizing an image by scaling it with nearest interpolation is a much better approach at reducing noise because each image still holds the full picture. This also explains why the images scaled to 32x32 does just as well as an image that is cropped and padded to 128x128. However, we have not tried a large enough size in which cropping was unnecessary and the images would only be padded with black pixels. It may be interesting to observe the performance for images that are only padded because then no information is lost. Then, we would be comparing the performance for adding black pixel as noise versus stretching an image to a specified size. 
 
 We then investigated the Imbalance Class problem by comparing performance results on imbalanced dataset and balanced datset of 64x64 re-scaled images. The accuracy results of each experiment were tabulated as shown below:
 \begin{table}[ht]
@@ -269,12 +270,34 @@ We then investigated the Imbalance Class problem by comparing performance result
 	\label{table:balanced} % is used to refer this table in the text
 \end{table} 
 
-The results show that balancing a data does indeed improve the overall performance, but since we only performed 1-fold, the results may not be an accurate representation. Despite balancing the dataset, the network is still incapable of differentiating dogs and cats with certainty. We can observe this by looking at the confusion matrices on Figure 4, Figure 15 and Figure 17. Looking at the middle matrix for each figure, we see that the ratio of misidentifying cats and dogs are approximately the same and this is because the up-sampling technique only duplicates our data and cannot reproduce new cat and dog images that hold distinctive traits. 
+The results show that balancing a data does indeed improve the overall performance, but since we only performed 1-fold, the results may not be an accurate representation. Despite balancing the dataset, the network is still incapable of differentiating dogs and cats with certainty. We can observe this by looking at the confusion matrices on Figure 3, Figure 16 and Figure 18. Looking at the middle matrix for each figure, we see that the ratio of misidentifying cats and dogs are approximately the same and this is because the up-sampling technique only duplicates our data and cannot reproduce new cat and dog images that hold distinctive traits. 
+
+When using an SPP the model was unable to perform as well as the above mentioned techniques, averaging 70-80\% classification accuracy. The big benefit of using the SPP layer was no image resizing had to be done, however this also meant SMOTE and ADASYN could not be used as the libraries expect a uniform number of features per example. Not using these oversampling techniques could explain some of the loss in accuracy but also the size of the feature maps could have been an issue. Since many of raw images were rectangular in nature using square kernels could have prevented the model from correctly learning individual features. In addition the number of bins used in the SPP layer was quite small potentially using a higher number of bins could have increased accuracy. Another possible improvement, as mentioned in Kaiming et al [2], would be to resize images however instead of resizing all of the images to a static size, each image could be resize to one of many possible configurations depending on which configuration the image is closest to. 
 
 \section{Conclusion	}
 \paragraph{}
-In conclusion, different resizing techniques can make a significant different to classification accuracy, and balanced datasets do improve classification accuracy. From our experiments, scaling an image is generally a better approach as it retains the most information. Balanced datasets also improve the overall performance of the neural network. 
-\section{References	}
-https://www.datasciencecentral.com/profiles/blogs/handling-imbalanced-data-sets-in-supervised-learning-using-family
+In conclusion, different resizing techniques can make a significant different to classification accuracy, and balanced datasets do improve classification accuracy. From our experiments, scaling an image is generally a better approach as it retains the most information. Balanced datasets also improve the overall performance of the neural network. If an SPP layer were to be used then the architecture of the model would need to be rethought to gain a higher classification accuracy. 
+
+\begin{thebibliography}{9}
+\bibitem{knuthwebsite} 
+Natural Images, Kaggle, August 2017
+\\\texttt{https://www.kaggle.com/prasunroy/natural-images/}
+ 
+\bibitem{knuthwebsite} 
+Spatial Pyramid Pooling in Deep Convolutional Networks for Visual Recognition, April 23 2015,
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun,
+\\\texttt{https://arxiv.org/pdf/1406.4729.pdf}
+
+\bibitem{knuthwebsite} 
+Handling imbalanced dataset in supervised learning using family of SMOTE algorithm, April 24 2017,
+\\\texttt{https://www.datasciencecentral.com/profiles/blogs/\\
+handling-imbalanced-data-sets-in-supervised-learning-using-family}
+
+\bibitem{knuthwebsite} 
+Visualizing Data using t-SNE, November 2018
+Laurens van der Maaten, Geoffrey Hinton 
+\\\texttt{http://jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf}
+
+\end{thebibliography}
 
 \end{document} 
