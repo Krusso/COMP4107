@@ -105,19 +105,22 @@ The model chosen to experiment with was quite simple with 3 convolution layers, 
 
 \subsubsection{t-SNE}
 t-SNE is another technique for dimensionality reduction and as described in the original paper[4], t-Distributed stochastic neighbor (t-SNE) minimizes the divergence between two distributions: one distribution which measures the similarities between inputs and the other distribution that measures the difference between the reduced data according to a t-distribution. The main drawback of this algorithm is that it scales quadratically so using more than a few thousand data point is unfeasible. 
-
-\paragraph{}
-
 \section{Results}
-
 \begin{minipage}[c]{\textwidth}
 	%%%%%%%%%%%%%%%%%%%%%%%%%
 	%   resize no sampling  %
 	%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsubsection{Resizing unbalanced dataset by scaling using nearest interpolation}
+	\centering
+\includegraphics[width= 0.15\textwidth]{./figures/pca_h64_w64_r_none.png}
+\includegraphics[width= 0.15\textwidth]{./figures/pca_tsne_h64_w64_r_none.png}
+\includegraphics[width= 0.15\textwidth]{./figures/tsne_h64_w64_r_none.png}	\captionof{figure}{Visualization of 2000 randomly picked data points for 64x64 rescaled images}
 
-
+\includegraphics[width= 0.15\textwidth]{./figures/cm_h64_w64_r_none_e0.png}
+\includegraphics[width= 0.15\textwidth]{./figures/cm_h64_w64_r_none_e20.png}
+\includegraphics[width= 0.15\textwidth]{./figures/cm_h64_w64_r_none_e49.png}
+\captionof{figure}{Confusion Matrices of unbalanced resized images to 64x64 by scaling}
 
 \end{minipage}
 
@@ -276,7 +279,7 @@ When using an SPP the model was unable to perform as well as the above mentioned
 
 \section{Conclusion	}
 \paragraph{}
-In conclusion, different resizing techniques can make a significant different to classification accuracy, and balanced datasets do improve classification accuracy. From our experiments, scaling an image is generally a better approach as it retains the most information. Balanced datasets also improve the overall performance of the neural network. If an SPP layer were to be used then the architecture of the model would need to be rethought to gain a higher classification accuracy. 
+In conclusion, different resizing techniques can make a significant difference to classification accuracy, and balanced datasets do improve classification accuracy. From our experiments, scaling an image is generally a better approach as it retains the most information. Balanced datasets also improve the overall performance of the neural network. If an SPP layer were to be used then the architecture of the model would need to be rethought to gain a higher classification accuracy. 
 
 \begin{thebibliography}{9}
 \bibitem{knuthwebsite} 

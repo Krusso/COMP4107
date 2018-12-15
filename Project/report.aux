@@ -14,37 +14,44 @@
 \@writefile{toc}{\contentsline {paragraph}{}{2}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Spatial Pyramid Pooling}{2}}
 \@writefile{toc}{\contentsline {paragraph}{}{2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces An example of a network structure using an SPP from Kaiming et al [2] where 256 is the number of input feature maps and the SPP consists of 3 different bin sizes: a global bin, a bin with 2 buckets and a bin with 4 buckets\relax }}{2}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.3}Over-sampling vs Under-sampling}{3}}
 \@writefile{toc}{\contentsline {paragraph}{}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.4}Neural Network Model}{3}}
+\@writefile{toc}{\contentsline {paragraph}{}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.5}t-SNE}{3}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Results}{3}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.1}Resizing unbalanced dataset by scaling using nearest interpolation}{3}}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Visualization of 2000 randomly picked data points for 32x32 rescaled images\relax }}{3}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Visualization of 2000 randomly picked data points for 32x32 rescaled images\relax }}{3}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Visualization of 2000 randomly picked data points for 64x64 rescaled images\relax }}{4}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Confusion Matrices of unbalanced resized images to 64x64 by scaling\relax }}{4}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Visualization of 2000 randomly picked data points for 128x128 rescaled images\relax }}{4}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Confusion Matrices of unbalanced resized images to 128x128 by scaling\relax }}{4}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Testing accuracy comparison for image scaled to 32x32 (grey), 64x64 (green), 128x128 (orange)\relax }}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Visualization of 2000 randomly picked data points for 64x64 rescaled images\relax }}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Confusion Matrices of unbalanced resized images to 64x64 by scaling\relax }}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Visualization of 2000 randomly picked data points for 64x64 rescaled images\relax }}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Confusion Matrices of unbalanced resized images to 64x64 by scaling\relax }}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Visualization of 2000 randomly picked data points for 128x128 rescaled images\relax }}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Confusion Matrices of unbalanced resized images to 128x128 by scaling\relax }}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Testing accuracy comparison for image scaled to 32x32 (grey), 64x64 (green), 128x128 (orange)\relax }}{4}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.2}Resizing unbalanced dataset by crop and pad}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Visualization of 2000 randomly picked data points for 32x32 crop/pad images\relax }}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Confusion Matrices of unbalanced resized images to 32x32 by crop/pad\relax }}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Visualization of 2000 randomly picked data points for 64x64 crop/pad images\relax }}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Confusion Matrices of unbalanced resized images to 64x64 by crop/pad\relax }}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Visualization of 2000 randomly picked data points for 128x128 crop/pad images\relax }}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Testing accuracy comparison for image resized by nearest interpolation for 32x32 (blue), 64x64 (red), 128x128 (pink)\relax }}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Visualization of 2000 randomly picked data points for 32x32 crop/pad images\relax }}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Confusion Matrices of unbalanced resized images to 32x32 by crop/pad\relax }}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Visualization of 2000 randomly picked data points for 64x64 crop/pad images\relax }}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Confusion Matrices of unbalanced resized images to 64x64 by crop/pad\relax }}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Visualization of 2000 randomly picked data points for 128x128 crop/pad images\relax }}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Testing accuracy comparison for image resized by nearest interpolation for 32x32 (blue), 64x64 (red), 128x128 (pink)\relax }}{6}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.3}Up-sampling dataset using SMOTE and ADASYN on 64x64 rescaled images}{6}}
-\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Visualization of 2000 randomly picked up-sampled data points by SMOTE for 64x64 images resized by nearest interpolation\relax }}{6}}
-\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Confusion matrix up-sampled data points by SMOTE for 64x64 images resized by nearest interpolation\relax }}{6}}
-\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Visualization of 2000 randomly picked up-sampled data points by ADASYN for 64x64 images resized by nearest interpolation\relax }}{6}}
-\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Visualization of 2000 randomly picked up-sampled data points by ADASYN for 64x64 images resized by nearest interpolation\relax }}{7}}
-\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Testing accuracy comparison between no-upsampling (green), SMOTE (grey) and ADASYN (orange) on 64x64 image dataset\relax }}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Visualization of 2000 randomly picked up-sampled data points by SMOTE for 64x64 images resized by nearest interpolation\relax }}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Confusion matrix up-sampled data points by SMOTE for 64x64 images resized by nearest interpolation\relax }}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Visualization of 2000 randomly picked up-sampled data points by ADASYN for 64x64 images resized by nearest interpolation\relax }}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Visualization of 2000 randomly picked up-sampled data points by ADASYN for 64x64 images resized by nearest interpolation\relax }}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {19}{\ignorespaces Testing accuracy comparison between no-upsampling (green), SMOTE (grey) and ADASYN (orange) on 64x64 image dataset\relax }}{7}}
 \@writefile{toc}{\contentsline {section}{\numberline {5}Analysis and Discussion}{7}}
 \@writefile{toc}{\contentsline {paragraph}{}{7}}
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Accuracy Comparison of Scaled vs Crop and Pad\relax }}{7}}
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{table:scale_cp}{{1}{7}}
+\bibcite{knuthwebsite}{1}
+\bibcite{knuthwebsite}{2}
+\bibcite{knuthwebsite}{3}
+\bibcite{knuthwebsite}{4}
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Accuracy Comparison of None, SMOTE and ADASYN on 64x64 dataset\relax }}{8}}
 \newlabel{table:balanced}{{2}{8}}
 \@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion }{8}}
 \@writefile{toc}{\contentsline {paragraph}{}{8}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}References }{8}}
