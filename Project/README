@@ -1,0 +1,6 @@
+First need to run preprocessing
+
+`python preprocess_image.py --h {height} --w {width} --method {r or cp or spatial} --sampling {none or adasyn or smote}`
+
+Then run code.py with the same parameters in addition to spatial which is True or False
+
